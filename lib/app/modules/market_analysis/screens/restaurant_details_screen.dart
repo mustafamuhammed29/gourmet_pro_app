@@ -1,23 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:gourmet_pro_app/app/modules/market_analysis/market_analysis_controller.dart';
-
-import '../../../shared/theme/app_colors.dart';
-import '../../../shared/widgets/custom_button.dart';
+import 'package:gourmet_pro_app/app/shared/theme/app_colors.dart';
+import 'package:gourmet_pro_app/app/shared/widgets/custom_button.dart';
 
 class RestaurantDetailsScreen extends GetView<MarketAnalysisController> {
   const RestaurantDetailsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Safely get the passed restaurant object
+    // Safely get the passed restaurant object from the arguments.
     final Restaurant? restaurant = Get.arguments as Restaurant?;
 
-    // Show an error screen if no restaurant data is available
+    // If for some reason no restaurant data was passed, show a safe error screen.
     if (restaurant == null) {
-      return const Scaffold(
+      return Scaffold(
         backgroundColor: AppColors.bgPrimary,
-        body: Center(
+        appBar: AppBar(backgroundColor: AppColors.bgPrimary),
+        body: const Center(
           child: Text(
             'لم يتم العثور على بيانات المطعم.',
             style: TextStyle(color: AppColors.textPrimary),
@@ -28,31 +28,33 @@ class RestaurantDetailsScreen extends GetView<MarketAnalysisController> {
 
     return Scaffold(
       backgroundColor: AppColors.bgPrimary,
+      // Using CustomScrollView to create the collapsing header effect.
       body: CustomScrollView(
         slivers: [
           _buildSliverAppBar(restaurant),
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(24.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     'معلومات عامة',
-                    style: Get.textTheme.titleLarge,
+                    style: Get.textTheme.titleLarge?.copyWith(color: AppColors.textPrimary),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 12),
                   Text(
-                    'العنوان: 456 شارع فرعي، المدينة',
-                    style: Get.textTheme.bodyMedium,
+                    'العنوان: 456 شارع فرعي، المدينة', // Placeholder address
+                    style: Get.textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
                   ),
                   const SizedBox(height: 24),
                   CustomButton(
                     text: 'عرض القائمة (للاستلهام)',
-                    onPressed: () {},
+                    onPressed: () {
+                      Get.snackbar('قيد التطوير', 'سيتم تفعيل هذه الميزة قريباً.');
+                    },
                     isLoading: false.obs,
-                    // FIX: Changed from 'backgroundColor' to 'isPrimary'
-                    isPrimary: false,
+                    isPrimary: false, // Use the secondary style for this button
                   )
                 ],
               ),
@@ -65,7 +67,7 @@ class RestaurantDetailsScreen extends GetView<MarketAnalysisController> {
 
   Widget _buildSliverAppBar(Restaurant restaurant) {
     return SliverAppBar(
-      expandedHeight: 200.0,
+      expandedHeight: 220.0,
       backgroundColor: AppColors.bgPrimary,
       pinned: true,
       iconTheme: const IconThemeData(color: Colors.white),
@@ -83,14 +85,15 @@ class RestaurantDetailsScreen extends GetView<MarketAnalysisController> {
           fit: StackFit.expand,
           children: [
             Image.network(
-              'https://placehold.co/600x400/111/FFF?text=${restaurant.name.replaceAll(' ', '+')}',
+              restaurant.imageUrl.replaceFirst('100x100', '600x400'), // Get a larger image
               fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) => Container(color: AppColors.bgTertiary),
             ),
+            // Add a gradient overlay for better title readability.
             Container(
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Colors.black, Colors.transparent],
+                  colors: [Colors.black.withOpacity(0.8), Colors.transparent],
                   begin: Alignment.bottomCenter,
                   end: Alignment.center,
                 ),

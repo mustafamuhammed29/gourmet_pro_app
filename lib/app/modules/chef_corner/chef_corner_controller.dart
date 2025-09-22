@@ -1,85 +1,43 @@
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:gourmet_pro_app/app/routes/app_routes.dart';
+import 'package:gourmet_pro_app/app/shared/widgets/custom_snackbar.dart';
 
-// نموذج بيانات بسيط لتمثيل حالة طلبات الشيف
-class ChefRequest {
-  final String dishName;
-  final String status; // e.g., 'قيد المراجعة', 'الوصفة مقترحة'
+// A simple local model for current requests
+class DishRequest {
+  final String name;
+  final String status;
 
-  ChefRequest({required this.dishName, required this.status});
+  DishRequest(this.name, this.status);
 }
 
 class ChefCornerController extends GetxController {
-  // متحكم في حقل إدخال المكونات
-  final ingredientController = TextEditingController();
+  // --- STATE VARIABLES ---
 
-  // متغير لإدارة حالة التحميل (عند استدعاء AI)
-  var isLoading = false.obs;
+  // Dummy list of current dish development requests.
+  final List<DishRequest> currentRequests = [
+    DishRequest('تارتار التونة الحار', 'قيد المراجعة'),
+    DishRequest('موس الشوكولاتة النباتي', 'الوصفة مقترحة'),
+    DishRequest('طبق دجاج بالزعتر', 'مكتمل'),
+  ].obs;
 
-  // متغير لتخزين فكرة الطبق التي تم إنشاؤها بواسطة AI
-  var aiDishIdea = ''.obs;
+  // --- PUBLIC METHODS ---
 
-  // قائمة وهمية (dummy) لطلبات الشيف الحالية
-  var myRequests = <ChefRequest>[].obs;
+  /// Navigates the user to the chat screen to talk with an expert.
+  void contactExpert() {
+    // Navigate to the main chat screen
+    Get.toNamed(Routes.chat);
 
-  @override
-  void onInit() {
-    super.onInit();
-    // ملء القائمة ببيانات وهمية عند بدء تشغيل الـ Controller
-    fetchMyRequests();
+    // Show an informational message
+    CustomSnackbar.showInfo(
+        'لقد تم توجيهك إلى فريق الدعم. اطلب المساعدة من خبرائنا.');
   }
 
-  void fetchMyRequests() {
-    // في تطبيق حقيقي، سيتم جلب هذه البيانات من الـ API
-    myRequests.assignAll([
-      ChefRequest(dishName: 'تارتار التونة الحار', status: 'قيد المراجعة'),
-      ChefRequest(dishName: 'موس الشوكولاتة النباتي', status: 'الوصفة مقترحة'),
-      ChefRequest(dishName: 'ريزوتو الفطر بالكمأة', status: 'مكتمل'),
-    ]);
-  }
-
-  // دالة لاستدعاء AI والحصول على فكرة طبق
-  Future<void> getDishIdea() async {
-    final ingredient = ingredientController.text.trim();
-    if (ingredient.isEmpty) {
-      Get.snackbar(
-        'خطأ',
-        'يرجى إدخال مكون أساسي للحصول على فكرة.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.withOpacity(0.9),
-        colorText: Colors.white,
-      );
-      return;
-    }
-
-    isLoading.value = true;
-    aiDishIdea.value = ''; // مسح النتيجة القديمة
-
-    try {
-      // محاكاة استدعاء API يستغرق ثانيتين
-      await Future.delayed(const Duration(seconds: 2));
-
-      // ملاحظة: في تطبيق حقيقي، سنقوم باستدعاء دالة من ApiProvider هنا
-      // final result = await _apiProvider.generateDishIdea(ingredient);
-      // aiDishIdea.value = result;
-
-      // نتيجة وهمية للتجربة
-      aiDishIdea.value =
-      "<h4>دجاج بالليمون المعمر</h4><p>صدر دجاج متبل في الليمون المعمر والثوم والأعشاب، مشوي ببطء ويقدم فوق طبقة من الكسكس بالزعفران والمشمش المجفف، ومزين باللوز المحمص.</p>";
-    } catch (e) {
-      Get.snackbar(
-        'خطأ في الشبكة',
-        'حدث خطأ أثناء محاولة الحصول على فكرة، يرجى المحاولة مرة أخرى.',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-    } finally {
-      isLoading.value = false;
-    }
-  }
-
-  @override
-  void onClose() {
-    ingredientController.dispose();
-    super.onClose();
+  /// Placeholder for a future feature to see request details.
+  void viewRequestDetails(DishRequest request) {
+    Get.snackbar(
+      'قيد التطوير',
+      'سيتم تفعيل ميزة عرض تفاصيل الطلب لـ "${request.name}" قريباً.',
+    );
   }
 }
+

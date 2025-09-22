@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:gourmet_pro_app/app/modules/market_analysis/market_analysis_controller.dart';
-import '../../../shared/theme/app_colors.dart';
+import 'package:gourmet_pro_app/app/shared/theme/app_colors.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 
 class DiscoverMapScreen extends GetView<MarketAnalysisController> {
   const DiscoverMapScreen({super.key});
@@ -12,60 +14,24 @@ class DiscoverMapScreen extends GetView<MarketAnalysisController> {
       backgroundColor: AppColors.bgPrimary,
       body: Column(
         children: [
-          // --- Top: Map View ---
+          // --- Top: Interactive Map View ---
           SizedBox(
             height: Get.height * 0.45,
-            child: Stack(
+            child: FlutterMap(
+              mapController: controller.mapController,
+              options: MapOptions(
+                initialCenter: LatLng(34.0522, -118.2437),
+                initialZoom: 13.0,
+              ),
               children: [
-                Positioned.fill(
-                  child: Image.network(
-                    'https://placehold.co/400x800/374151/9CA3AF?text=Map+View',
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) =>
-                        Container(color: AppColors.bgTertiary),
-                  ),
+                TileLayer(
+                  urlTemplate:
+                  'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  subdomains: ['a', 'b', 'c'],
                 ),
-                Container(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Colors.black54, Colors.transparent],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                    ),
-                  ),
-                ),
-                SafeArea(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      children: [
-                        const Text(
-                          'تحليل السوق',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        TextField(
-                          style: const TextStyle(color: AppColors.textPrimary),
-                          decoration: InputDecoration(
-                            hintText: 'ابحث بالمنطقة...',
-                            hintStyle:
-                            const TextStyle(color: AppColors.textSecondary),
-                            filled: true,
-                            fillColor: AppColors.bgSecondary,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: BorderSide.none,
-                            ),
-                            prefixIcon: const Icon(Icons.search,
-                                color: AppColors.textSecondary),
-                          ),
-                        ),
-                      ],
-                    ),
+                Obx(
+                      () => MarkerLayer(
+                    markers: controller.markers.toList(),
                   ),
                 ),
               ],
@@ -92,12 +58,12 @@ class DiscoverMapScreen extends GetView<MarketAnalysisController> {
   Widget _buildFilters() {
     return SizedBox(
       height: 40,
-      // FIX: Removed the Obx from here to wrap only the changing part inside the builder.
+      // FIX: The Obx has been moved inside the itemBuilder for better performance.
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: controller.filters.length,
         itemBuilder: (context, index) {
-          // FIX: Added Obx here to only rebuild the ChoiceChip when its state changes.
+          // Now, only the ChoiceChip will rebuild when the selected index changes.
           return Obx(() {
             final isActive = controller.selectedFilterIndex.value == index;
             return ChoiceChip(
@@ -153,7 +119,7 @@ class _RestaurantCard extends GetView<MarketAnalysisController> {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: () => controller.goToRestaurantDetails(restaurant),
+      onTap: () => controller.focusOnRestaurant(restaurant),
       borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.all(12),
@@ -218,12 +184,11 @@ class _RestaurantCard extends GetView<MarketAnalysisController> {
                 ],
               ),
             ),
-            if (restaurant.hasOffer)
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 8.0),
-                child:
-                Icon(Icons.local_offer, color: AppColors.accent, size: 20),
-              ),
+            IconButton(
+              onPressed: () => controller.goToRestaurantDetails(restaurant),
+              icon: const Icon(Icons.arrow_forward_ios,
+                  color: AppColors.textSecondary, size: 18),
+            )
           ],
         ),
       ),

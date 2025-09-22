@@ -34,21 +34,27 @@ class AnalyticsScreen extends GetView<AnalyticsController> {
   }
 
   Widget _buildStatsGrid() {
-    return Obx(() => GridView.count(
+    return GridView.count(
       crossAxisCount: 2,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       crossAxisSpacing: 16,
       mainAxisSpacing: 16,
       children: [
-        _StatCard(title: 'زيارات الملف الشخصي', value: controller.profileVisits.value.toString()),
-        _StatCard(title: 'نقرات القائمة', value: controller.menuClicks.value.toString()),
+        Obx(() => _StatCard(
+          title: 'زيارات الملف الشخصي',
+          value: controller.profileVisits.value.toString(),
+        )),
+        Obx(() => _StatCard(
+          title: 'نقرات القائمة',
+          value: controller.menuClicks.value.toString(),
+        )),
       ],
-    ));
+    );
   }
 
   Widget _buildHealthScoreCard() {
-    return Obx(() => Container(
+    return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.bgSecondary,
@@ -66,7 +72,7 @@ class AnalyticsScreen extends GetView<AnalyticsController> {
             ),
           ),
           const SizedBox(height: 16),
-          ClipRRect(
+          Obx(() => ClipRRect(
             borderRadius: BorderRadius.circular(10),
             child: LinearProgressIndicator(
               value: controller.restaurantHealth.value,
@@ -74,7 +80,7 @@ class AnalyticsScreen extends GetView<AnalyticsController> {
               backgroundColor: AppColors.bgTertiary,
               valueColor: const AlwaysStoppedAnimation<Color>(Colors.green),
             ),
-          ),
+          )),
           const SizedBox(height: 8),
           const Center(
             child: Text(
@@ -87,7 +93,7 @@ class AnalyticsScreen extends GetView<AnalyticsController> {
           ),
         ],
       ),
-    ));
+    );
   }
 
   Widget _buildGrowthOpportunitiesCard() {
@@ -114,23 +120,24 @@ class AnalyticsScreen extends GetView<AnalyticsController> {
             isLoading: controller.isLoadingInsights,
           )),
           const SizedBox(height: 16),
-          Obx(() => AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            padding: controller.aiInsights.isNotEmpty
-                ? const EdgeInsets.all(12)
-                : EdgeInsets.zero,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: AppColors.bgTertiary,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: controller.aiInsights.isNotEmpty
-                ? HtmlWidget(
-              controller.aiInsights.value,
-              textStyle: const TextStyle(color: AppColors.textPrimary),
-            )
-                : const SizedBox(height: 80),
-          )),
+          Obx(() {
+            final hasInsights = controller.aiInsights.isNotEmpty;
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              padding: hasInsights ? const EdgeInsets.all(12) : EdgeInsets.zero,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: AppColors.bgTertiary,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: hasInsights
+                  ? HtmlWidget(
+                controller.aiInsights.value,
+                textStyle: const TextStyle(color: AppColors.textPrimary),
+              )
+                  : const SizedBox(height: 80),
+            );
+          }),
         ],
       ),
     );

@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:gourmet_pro_app/app/modules/ai_features/promo_generator/promo_generator_widget.dart';
 import 'package:gourmet_pro_app/app/modules/dashboard/dashboard_controller.dart';
-
 import '../../routes/app_routes.dart';
 import '../../shared/theme/app_colors.dart';
+
 
 class DashboardScreen extends GetView<DashboardController> {
   const DashboardScreen({super.key});
@@ -79,41 +79,20 @@ class DashboardScreen extends GetView<DashboardController> {
   Widget _buildBanner() {
     return AspectRatio(
       aspectRatio: 16 / 8,
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: Image.network(
-                "https://placehold.co/600x400/000000/FFFFFF?text=Restaurant+Banner",
+      child: Container(
+        decoration: BoxDecoration(
+            color: AppColors.bgSecondary,
+            borderRadius: BorderRadius.circular(16),
+            image: DecorationImage(
+                image: const NetworkImage(
+                    "https://placehold.co/600x400/000000/FFFFFF?text=Restaurant+Banner"),
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    color: AppColors.bgSecondary,
-                    child: const Center(
-                      child: Icon(
-                        Icons.image_not_supported_outlined,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
-          Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              gradient: LinearGradient(
-                colors: [Colors.black.withOpacity(0.6), Colors.transparent],
-                begin: Alignment.bottomCenter,
-                end: Alignment.center,
-              ),
-            ),
-          ),
-          const Positioned(
-            bottom: 16,
-            right: 16,
+                colorFilter: ColorFilter.mode(
+                    Colors.black.withOpacity(0.4), BlendMode.darken))),
+        child: const Align(
+          alignment: Alignment.bottomRight,
+          child: Padding(
+            padding: EdgeInsets.all(16.0),
             child: Text(
               'مرحباً بعودتك!',
               style: TextStyle(
@@ -123,7 +102,7 @@ class DashboardScreen extends GetView<DashboardController> {
               ),
             ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -142,16 +121,16 @@ class DashboardScreen extends GetView<DashboardController> {
           label: 'إدارة القائمة',
           onTap: () => Get.toNamed(Routes.manageMenu),
         ),
-        // FIX: This button now navigates to the services screen.
         _QuickActionButton(
           icon: Icons.design_services,
           label: 'خدماتنا',
           onTap: () => Get.toNamed(Routes.services),
         ),
+        // FIX: This now correctly points to promoTools and has a new icon/label.
         _QuickActionButton(
-          icon: Icons.analytics,
-          label: 'التحليلات',
-          onTap: () => Get.toNamed(Routes.analytics),
+          icon: Icons.qr_code_2,
+          label: 'أدوات التسويق',
+          onTap: () => Get.toNamed(Routes.promoTools),
         ),
         _QuickActionButton(
           icon: Icons.edit_note,

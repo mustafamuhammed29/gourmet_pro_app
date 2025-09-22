@@ -11,7 +11,8 @@ abstract class Routes {
   static const manageMenu = '/manage-menu';
   static const addEditDish = '/add-edit-dish';
   static const chat = '/chat';
-  static const analytics = '/analytics';
+  static const promoTools = '/promo-tools';
+  static const digitalMenu = '/digital-menu'; // <-- تمت إضافة السطر الجديد هنا
   static const profile = '/profile';
   static const editProfile = '/edit-profile';
   static const services = '/services';
@@ -29,4 +30,3 @@ abstract class Routes {
   static const notifications = '/notifications';
   static const staffManagement = '/staff-management';
 }
-
