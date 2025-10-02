@@ -11,112 +11,191 @@ class ProfileScreen extends GetView<ProfileController> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.bgPrimary,
-      appBar: AppBar(
-        backgroundColor: AppColors.bgPrimary,
-        elevation: 0,
+      // Using CustomScrollView for the magic of animated header
+      body: CustomScrollView(
+        slivers: [
+          _buildSliverAppBar(),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                children: [
+                  _buildProfileCompletionCard(),
+                  const SizedBox(height: 24),
+                  _buildReputationStats(),
+                  const SizedBox(height: 24),
+                  _buildInfoCard(title: 'نبذة عنا', content: controller.bio.value),
+                  const SizedBox(height: 16),
+                  _buildInfoCard(title: 'قصتنا', content: controller.story.value),
+                  const SizedBox(height: 24),
+                  _buildQuickActions(),
+                  const SizedBox(height: 24),
+                  _buildDocumentStatus(),
+                  const SizedBox(height: 24),
+                  _buildLogoutButton(),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // The magic starts here: SliverAppBar for a collapsible, animated header
+  Widget _buildSliverAppBar() {
+    return SliverAppBar(
+      expandedHeight: 220.0,
+      floating: false,
+      pinned: true,
+      backgroundColor: AppColors.bgSecondary,
+      elevation: 2,
+      iconTheme: const IconThemeData(color: AppColors.textPrimary),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.edit_outlined),
+          onPressed: () => Get.toNamed(Routes.editProfile),
+        ),
+      ],
+      flexibleSpace: FlexibleSpaceBar(
         centerTitle: true,
-        title: const Text(
-          'الملف الشخصي',
-          style: TextStyle(
+        titlePadding: const EdgeInsets.symmetric(horizontal: 48, vertical: 12),
+        title: Text(
+          controller.restaurantName.value,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
             color: AppColors.textPrimary,
+            fontSize: 16.0,
             fontWeight: FontWeight.bold,
-            fontSize: 20,
           ),
         ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
-        child: Column(
+        background: Stack(
+          fit: StackFit.expand,
           children: [
-            _buildProfileHeader(),
-            const SizedBox(height: 32),
-            _buildImageGallery(),
-            const SizedBox(height: 16),
-            _buildSocialLinks(),
-            const SizedBox(height: 32),
-            _buildLogoutButton(),
+            // You can add a background image here
+            // Image.network('...', fit: BoxFit.cover),
+            Container(color: AppColors.bgPrimary.withOpacity(0.8)),
+            Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircleAvatar(
+                    radius: 45,
+                    backgroundColor: AppColors.bgTertiary,
+                    child: ClipOval(
+                      child: Image.network(
+                        controller.logoUrl.value,
+                        fit: BoxFit.cover,
+                        width: 90,
+                        height: 90,
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Icon(Icons.storefront, size: 45, color: AppColors.textSecondary);
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    controller.email.value,
+                    style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildProfileHeader() {
-    return Column(
+  // Magical Touch #2: Profile Completion Card
+  Widget _buildProfileCompletionCard() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.bgSecondary,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Obx(
+            () => Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'اكتمال ملفك الشخصي',
+                  style: TextStyle(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                Text(
+                  '${(controller.profileCompletion.value * 100).toInt()}%',
+                  style: const TextStyle(
+                    color: AppColors.accent,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: LinearProgressIndicator(
+                value: controller.profileCompletion.value,
+                backgroundColor: AppColors.bgTertiary,
+                color: AppColors.accent,
+                minHeight: 8,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              controller.profileCompletion.value < 1.0
+                  ? 'أكمل ملفك لجذب المزيد من العملاء!'
+                  : 'ملفك الشخصي مكتمل ورائع!',
+              style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReputationStats() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: [
-        Obx(
-          () => Stack(
-            clipBehavior: Clip.none,
-            children: [
-              CircleAvatar(
-                radius: 50,
-                backgroundColor: AppColors.bgSecondary,
-                // Using a child with ClipOval and Image.network for error handling
-                child: ClipOval(
-                  child: Image.network(
-                    controller.logoUrl.value,
-                    fit: BoxFit.cover,
-                    width: 100,
-                    height: 100,
-                    // This builder will be called if the image fails to load
-                    errorBuilder: (context, error, stackTrace) {
-                      return const Icon(
-                        Icons.storefront,
-                        color: AppColors.textSecondary,
-                        size: 50,
-                      );
-                    },
-                  ),
-                ),
-              ),
-              Positioned(
-                bottom: 0,
-                right: 0,
-                child: GestureDetector(
-                  onTap: () => Get.toNamed(Routes.editProfile),
-                  child: Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: const BoxDecoration(
-                      color: AppColors.accent,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.edit,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-        Obx(
-          () => Text(
-            controller.restaurantName.value,
-            style: const TextStyle(
-              color: AppColors.textPrimary,
-              fontWeight: FontWeight.bold,
-              fontSize: 22,
-            ),
-          ),
-        ),
-        const SizedBox(height: 4),
-        Obx(
-          () => Text(
-            controller.email.value,
-            style: const TextStyle(
-              color: AppColors.textSecondary,
-              fontSize: 16,
-            ),
-          ),
-        ),
+        _buildStatItem(Icons.star_half, '${controller.averageRating.value}', 'متوسط التقييم'),
+        _buildStatItem(Icons.rate_review_outlined, '${controller.reviewCount.value}', 'تقييم'),
+        _buildStatItem(Icons.quickreply_outlined, '${(controller.responseRate.value * 100).toInt()}%', 'معدل الرد'),
       ],
     );
   }
 
-  Widget _buildInfoCard({required String title, required Widget child}) {
+  Widget _buildStatItem(IconData icon, String value, String label) {
+    return Column(
+      children: [
+        Icon(icon, color: AppColors.accent, size: 28),
+        const SizedBox(height: 8),
+        Text(value, style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 4),
+        Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+      ],
+    );
+  }
+
+  // Magical Touch #3 & 4: Reusable Info Cards and Quick Actions
+  Widget _buildInfoCard({required String title, required String content}) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16.0),
@@ -129,111 +208,106 @@ class ProfileScreen extends GetView<ProfileController> {
         children: [
           Text(
             title,
-            style: const TextStyle(
-              color: AppColors.textPrimary,
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),
+            style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 16),
           ),
-          const SizedBox(height: 16),
-          child,
-        ],
-      ),
-    );
-  }
-
-  Widget _buildImageGallery() {
-    return _buildInfoCard(
-      title: 'معرض الصور',
-      child: Row(
-        children: [
-          // Using Expanded to make the layout flexible and prevent overflow
-          Expanded(
-            child: _buildGalleryImage('https://placehold.co/100x100/444/FFF'),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: _buildGalleryImage('https://placehold.co/100x100/555/FFF'),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: AspectRatio(
-              aspectRatio: 1.0,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: AppColors.bgTertiary,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Center(
-                  child: Text(
-                    '+5',
-                    style: TextStyle(
-                      color: AppColors.textPrimary,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-            ),
+          const SizedBox(height: 8),
+          Text(
+            content,
+            style: const TextStyle(color: AppColors.textSecondary, fontSize: 14, height: 1.5),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildGalleryImage(String url) {
-    return AspectRatio(
-      aspectRatio: 1.0,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(8.0),
-        child: Image.network(
-          url,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            return Container(
-              color: AppColors.bgTertiary,
-              child: const Icon(
-                Icons.image_not_supported_outlined,
-                color: AppColors.textSecondary,
-              ),
-            );
-          },
+  Widget _buildQuickActions() {
+    return Row(
+      children: [
+        Expanded(child: _buildActionChip(Icons.location_on_outlined, 'تحديث الموقع', controller.updateLocationOnMap)),
+        const SizedBox(width: 12),
+        Expanded(child: _buildActionChip(Icons.card_membership_outlined, 'الاشتراك', controller.manageSubscription)),
+      ],
+    );
+  }
+
+  Widget _buildActionChip(IconData icon, String label, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: AppColors.bgSecondary,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: AppColors.accent, size: 24),
+            const SizedBox(height: 8),
+            Text(label, style: const TextStyle(color: AppColors.textPrimary, fontSize: 14)),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildSocialLinks() {
-    return _buildInfoCard(
-      title: 'تابعنا على',
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
+  Widget _buildDocumentStatus() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        color: AppColors.bgSecondary,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(
-              Icons.facebook,
-              color: AppColors.textSecondary,
-              size: 30,
+          const Text('حالة المستندات', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 16)),
+          const SizedBox(height: 16),
+          Obx(
+                () => Column(
+              children: controller.documents.map((doc) => _buildDocumentRow(doc)).toList(),
             ),
           ),
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(
-              Icons.camera_alt,
-              color: AppColors.textSecondary,
-              size: 30,
-            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDocumentRow(DocumentStatus doc) {
+    IconData statusIcon;
+    Color statusColor;
+    String statusText;
+
+    switch (doc.status) {
+      case 'approved':
+        statusIcon = Icons.check_circle;
+        statusColor = Colors.green;
+        statusText = 'مقبول';
+        break;
+      case 'pending':
+        statusIcon = Icons.hourglass_top;
+        statusColor = Colors.orange;
+        statusText = 'قيد المراجعة';
+        break;
+      default:
+        statusIcon = Icons.cancel;
+        statusColor = Colors.red;
+        statusText = 'مرفوض';
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Row(
+        children: [
+          Icon(Icons.description_outlined, color: AppColors.textSecondary),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(doc.name, style: const TextStyle(color: AppColors.textPrimary, fontSize: 15)),
           ),
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(
-              Icons.snapchat,
-              color: AppColors.textSecondary,
-              size: 30,
-            ),
-          ),
+          const SizedBox(width: 12),
+          Icon(statusIcon, color: statusColor, size: 20),
+          const SizedBox(width: 4),
+          Text(statusText, style: TextStyle(color: statusColor, fontSize: 14, fontWeight: FontWeight.w500)),
         ],
       ),
     );
@@ -242,23 +316,15 @@ class ProfileScreen extends GetView<ProfileController> {
   Widget _buildLogoutButton() {
     return SizedBox(
       width: double.infinity,
-      child: TextButton(
+      child: TextButton.icon(
         onPressed: () => controller.logout(),
         style: TextButton.styleFrom(
           backgroundColor: AppColors.bgSecondary.withOpacity(0.5),
           padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
-        child: const Text(
-          'تسجيل الخروج',
-          style: TextStyle(
-            color: Colors.redAccent,
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-          ),
-        ),
+        icon: const Icon(Icons.logout, color: Colors.redAccent),
+        label: const Text('تسجيل الخروج', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 16)),
       ),
     );
   }

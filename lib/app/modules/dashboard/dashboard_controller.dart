@@ -50,4 +50,3 @@ class DashboardController extends GetxController {
     }
   }
 }
-

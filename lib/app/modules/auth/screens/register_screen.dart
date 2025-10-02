@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:gourmet_pro_app/app/modules/auth/auth_controller.dart';
@@ -24,6 +25,12 @@ class RegisterScreen extends GetView<AuthController> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                _buildTextField(
+                  controller: controller.fullNameController,
+                  labelText: 'الاسم الكامل للمالك',
+                  validator: (value) =>
+                  value!.isEmpty ? 'هذا الحقل مطلوب' : null,
+                ),
                 _buildTextField(
                   controller: controller.restaurantNameController,
                   labelText: 'اسم المطعم',
@@ -81,28 +88,48 @@ class RegisterScreen extends GetView<AuthController> {
                   controller: controller.confirmPasswordController,
                   labelText: 'تأكيد كلمة المرور',
                   obscureText: true,
-                  validator: (value) => value !=
-                      controller.registerPasswordController.text
+                  validator: (value) =>
+                  value != controller.registerPasswordController.text
                       ? 'كلمتا المرور غير متطابقتين'
                       : null,
                 ),
                 const SizedBox(height: 24),
-                _buildDocumentUploadSection(),
+                const Text(
+                  'المستندات الرسمية',
+                  textAlign: TextAlign.right,
+                  style: TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 12),
+                _buildSingleDocumentUploader(
+                  label: 'الرخصة التجارية',
+                  onTap: () => controller.pickLicense(),
+                  fileName: controller.licenseFileName,
+                  fileObservable: controller.licenseFile,
+                ),
+                const SizedBox(height: 12),
+                _buildSingleDocumentUploader(
+                  label: 'السجل التجاري',
+                  onTap: () => controller.pickRegistry(),
+                  fileName: controller.registryFileName,
+                  fileObservable: controller.registryFile,
+                ),
                 const SizedBox(height: 24),
-                Obx(
-                      () => SizedBox(
+                Obx(() {
+                  final isLoading = controller.isLoading.value;
+                  return SizedBox(
                     height: 50,
                     child: ElevatedButton(
-                      onPressed: controller.isLoading.value
-                          ? null
-                          : () => controller.register(),
+                      onPressed: isLoading ? null : () => controller.register(),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.accent,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: controller.isLoading.value
+                      child: isLoading
                           ? const CircularProgressIndicator(color: Colors.white)
                           : const Text(
                         'إرسال الطلب',
@@ -113,13 +140,14 @@ class RegisterScreen extends GetView<AuthController> {
                         ),
                       ),
                     ),
-                  ),
-                ),
+                  );
+                }),
                 const SizedBox(height: 12),
                 const Text(
                   'سيتم مراجعة طلبك من قبل الإدارة قبل الموافقة عليه.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                  style:
+                  TextStyle(color: AppColors.textSecondary, fontSize: 12),
                 ),
               ],
             ),
@@ -153,45 +181,56 @@ class RegisterScreen extends GetView<AuthController> {
     );
   }
 
-  Widget _buildDocumentUploadSection() {
+  Widget _buildSingleDocumentUploader({
+    required String label,
+    required VoidCallback onTap,
+    required String fileName,
+    required Rx<File?> fileObservable,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        const Text(
-          'رفع المستندات',
-          style: TextStyle(
-              color: AppColors.textPrimary,
-              fontSize: 16,
-              fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 12),
-        Container(
-          height: 150,
-          decoration: BoxDecoration(
-            border: Border.all(color: AppColors.bgTertiary, width: 2),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.cloud_upload_outlined,
-                    color: AppColors.textSecondary, size: 40),
-                const SizedBox(height: 8),
-                TextButton(
-                  onPressed: () {
-                    // TODO: Implement file picking logic
-                    Get.snackbar(
-                      'قيد الإنشاء',
-                      'سيتم تفعيل ميزة رفع الملفات قريباً.',
-                      snackPosition: SnackPosition.BOTTOM,
-                    );
-                  },
-                  child: const Text('اختر ملف (ترخيص، سجل تجاري)',
-                      style: TextStyle(color: AppColors.accent)),
-                ),
-              ],
+        Text(label, style: const TextStyle(color: AppColors.textSecondary)),
+        const SizedBox(height: 8),
+        InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+            width: double.infinity,
+            decoration: BoxDecoration(
+              border: Border.all(color: AppColors.bgTertiary),
+              borderRadius: BorderRadius.circular(12),
             ),
+            child: Obx(() {
+              if (fileObservable.value == null) {
+                return const Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Text('اختيار ملف',
+                        style: TextStyle(color: AppColors.accent)),
+                    SizedBox(width: 8),
+                    Icon(Icons.attach_file, color: AppColors.textSecondary),
+                  ],
+                );
+              } else {
+                return Row(
+                  children: [
+                    const Icon(Icons.check_circle,
+                        color: Colors.green, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        fileName,
+                        style: const TextStyle(color: AppColors.textPrimary),
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.right,
+                      ),
+                    ),
+                  ],
+                );
+              }
+            }),
           ),
         ),
       ],

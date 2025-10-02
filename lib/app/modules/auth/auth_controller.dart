@@ -1,24 +1,28 @@
+import 'dart:convert';
+import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:gourmet_pro_app/app/data/providers/api_provider.dart';
 import 'package:gourmet_pro_app/app/routes/app_routes.dart';
+import 'package:gourmet_pro_app/app/shared/widgets/custom_snackbar.dart';
 
 class AuthController extends GetxController {
   final ApiProvider _apiProvider = Get.find<ApiProvider>();
   final _storage = GetStorage();
 
-  // --- General State ---
   final isLoading = false.obs;
 
-  // --- Login Screen State ---
+  // ... (Login properties)
   final loginFormKey = GlobalKey<FormState>();
   late TextEditingController loginEmailController;
   late TextEditingController loginPasswordController;
   final isPasswordHidden = true.obs;
 
-  // --- Register Screen State ---
+  // --- Register ---
   final registerFormKey = GlobalKey<FormState>();
+  late TextEditingController fullNameController; //  <-- ١. إضافة المتحكم الجديد
   late TextEditingController restaurantNameController;
   late TextEditingController addressController;
   late TextEditingController cuisineTypeController;
@@ -28,14 +32,19 @@ class AuthController extends GetxController {
   late TextEditingController confirmPasswordController;
   final isLoginPasswordHidden = true.obs;
 
+  // --- File Upload ---
+  final Rx<File?> licenseFile = Rx<File?>(null);
+  final Rx<File?> registryFile = Rx<File?>(null);
+  String get licenseFileName => licenseFile.value?.path.split('/').last ?? '';
+  String get registryFileName =>
+      registryFile.value?.path.split('/').last ?? '';
+
   @override
   void onInit() {
     super.onInit();
-    // Initialize login controllers
     loginEmailController = TextEditingController();
     loginPasswordController = TextEditingController();
-
-    // Initialize register controllers
+    fullNameController = TextEditingController(); //  <-- ٢. تهيئة المتحكم
     restaurantNameController = TextEditingController();
     addressController = TextEditingController();
     cuisineTypeController = TextEditingController();
@@ -45,13 +54,98 @@ class AuthController extends GetxController {
     confirmPasswordController = TextEditingController();
   }
 
+  // ... (File picking logic)
+  Future<File?> _pickSingleFile() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf'],
+    );
+    if (result != null && result.files.single.path != null) {
+      return File(result.files.single.path!);
+    }
+    return null;
+  }
+
+  Future<void> pickLicense() async {
+    licenseFile.value = await _pickSingleFile();
+  }
+
+  Future<void> pickRegistry() async {
+    registryFile.value = await _pickSingleFile();
+  }
+
+
+  Future<void> register() async {
+    if (registerFormKey.currentState!.validate()) {
+      if (licenseFile.value == null || registryFile.value == null) {
+        CustomSnackbar.showError('يرجى رفع ملفي الرخصة والسجل التجاري.');
+        return;
+      }
+      isLoading(true);
+      try {
+        final data = {
+          "fullName": fullNameController.text.trim(), //  <-- ٣. إرسال الاسم الكامل
+          "restaurantName": restaurantNameController.text.trim(),
+          "address": addressController.text.trim(),
+          "cuisineType": cuisineTypeController.text.trim(),
+          "email": registerEmailController.text.trim(),
+          "phoneNumber": phoneNumberController.text.trim(),
+          "password": registerPasswordController.text,
+        };
+        final files = [licenseFile.value!, registryFile.value!];
+
+        final response = await _apiProvider.registerAndUpload(data, files);
+        final responseBody = json.decode(response.body);
+
+        if (response.statusCode == 201) {
+          Get.offAllNamed(Routes.pendingApproval);
+          CustomSnackbar.showSuccess(
+              responseBody['message'] ?? 'تم إرسال طلبك بنجاح!');
+        } else {
+          CustomSnackbar.showError(
+              responseBody['message'] ?? 'الرجاء التحقق من البيانات المدخلة.');
+        }
+      } catch (e) {
+        CustomSnackbar.showError('حدث خطأ غير متوقع: ${e.toString()}');
+      } finally {
+        isLoading(false);
+      }
+    }
+  }
+
+  // ... (Login logic and onClose)
+  Future<void> login() async {
+    if (loginFormKey.currentState!.validate()) {
+      isLoading(true);
+      try {
+        final response = await _apiProvider.login(
+          loginEmailController.text.trim(),
+          loginPasswordController.text,
+        );
+        if (response.isOk && response.body['access_token'] != null) {
+          await _storage.write('authToken', response.body['access_token']);
+          Get.offAllNamed(Routes.mainWrapper);
+        } else {
+          CustomSnackbar.showError(
+            response.body['message'] ??
+                'البريد الإلكتروني أو كلمة المرور غير صحيحة.',
+          );
+        }
+      } catch (e) {
+        CustomSnackbar.showError(
+          'حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.',
+        );
+      } finally {
+        isLoading(false);
+      }
+    }
+  }
+
   @override
   void onClose() {
-    // Dispose login controllers
     loginEmailController.dispose();
     loginPasswordController.dispose();
-
-    // Dispose register controllers
+    fullNameController.dispose();
     restaurantNameController.dispose();
     addressController.dispose();
     cuisineTypeController.dispose();
@@ -61,82 +155,5 @@ class AuthController extends GetxController {
     confirmPasswordController.dispose();
     super.onClose();
   }
-
-  // --- Login Logic ---
-  Future<void> login() async {
-    if (loginFormKey.currentState!.validate()) {
-      isLoading(true);
-      try {
-        final response = await _apiProvider.login(
-          loginEmailController.text.trim(),
-          loginPasswordController.text,
-        );
-
-        if (response.isOk && response.body['access_token'] != null) {
-          await _storage.write('token', response.body['access_token']);
-          Get.offAllNamed(Routes.mainWrapper);
-        } else {
-          Get.snackbar(
-            'خطأ في تسجيل الدخول',
-            response.body['message'] ??
-                'البريد الإلكتروني أو كلمة المرور غير صحيحة.',
-            snackPosition: SnackPosition.BOTTOM,
-            backgroundColor: Colors.red,
-            colorText: Colors.white,
-          );
-        }
-      } catch (e) {
-        Get.snackbar(
-          'خطأ',
-          'حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-        );
-      } finally {
-        isLoading(false);
-      }
-    }
-  }
-
-  // --- Register Logic ---
-  Future<void> register() async {
-    if (registerFormKey.currentState!.validate()) {
-      isLoading(true);
-      try {
-        final data = {
-          "restaurantName": restaurantNameController.text.trim(),
-          "address": addressController.text.trim(),
-          "cuisineType": cuisineTypeController.text.trim(),
-          "email": registerEmailController.text.trim(),
-          "phoneNumber": phoneNumberController.text.trim(),
-          "password": registerPasswordController.text,
-        };
-
-        final response = await _apiProvider.register(data);
-
-        if (response.isOk) {
-          Get.offAllNamed(Routes.pendingApproval);
-        } else {
-          Get.snackbar(
-            'خطأ في التسجيل',
-            response.body['message'] ?? 'الرجاء التحقق من البيانات المدخلة.',
-            snackPosition: SnackPosition.BOTTOM,
-            backgroundColor: Colors.red,
-            colorText: Colors.white,
-          );
-        }
-      } catch (e) {
-        Get.snackbar(
-          'خطأ',
-          'حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-        );
-      } finally {
-        isLoading(false);
-      }
-    }
-  }
 }
+

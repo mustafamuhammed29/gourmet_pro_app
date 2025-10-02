@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:gourmet_pro_app/app/modules/profile/profile_controller.dart';
 import 'package:gourmet_pro_app/app/shared/theme/app_colors.dart';
-
 import '../../../shared/widgets/custom_button.dart';
+import '../../../shared/widgets/custom_snackbar.dart';
 
 class EditProfileScreen extends GetView<ProfileController> {
   const EditProfileScreen({super.key});
@@ -34,29 +34,86 @@ class EditProfileScreen extends GetView<ProfileController> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // NEW: Added image editing functionality (UI only)
+            _buildLogoEditor(),
+            const SizedBox(height: 32),
             _buildTextField(
               label: 'اسم المطعم',
               controller: controller.restaurantNameController,
             ),
             const SizedBox(height: 16),
             _buildTextField(
-              label: 'نبذة قصيرة',
+              label: 'نبذة تعريفية (تظهر تحت الاسم)',
               controller: controller.bioController,
+              maxLines: 2,
             ),
             const SizedBox(height: 16),
             _buildTextField(
-              label: 'قصتنا',
+              label: 'قصتنا (تظهر في بطاقة منفصلة)',
               controller: controller.storyController,
               maxLines: 5,
             ),
             const SizedBox(height: 32),
+            // The Obx is no longer needed here as the button handles its own state
             CustomButton(
               text: 'حفظ التغييرات',
               onPressed: () => controller.saveProfileChanges(),
+              // FIXED: Pass the RxBool directly, not its .value
               isLoading: controller.isSaving,
             )
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildLogoEditor() {
+    return Center(
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          CircleAvatar(
+            radius: 50,
+            backgroundColor: AppColors.bgSecondary,
+            child: ClipOval(
+              child: Image.network(
+                controller.logoUrl.value,
+                fit: BoxFit.cover,
+                width: 100,
+                height: 100,
+                errorBuilder: (context, error, stackTrace) {
+                  return const Icon(
+                    Icons.storefront,
+                    color: AppColors.textSecondary,
+                    size: 50,
+                  );
+                },
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: -5,
+            right: -5,
+            child: GestureDetector(
+              onTap: () {
+                // TODO: Add logic to pick image from gallery/camera
+                CustomSnackbar.showInfo('سيتم تفعيل ميزة تغيير الصورة قريباً.');
+              },
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: const BoxDecoration(
+                  color: AppColors.accent,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.camera_alt,
+                  color: Colors.white,
+                  size: 22,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

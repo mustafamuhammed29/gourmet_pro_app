@@ -18,12 +18,17 @@ class ProfileController extends GetxController {
   // --- Main Profile Info ---
   final restaurantName = 'مطعم الذواقة'.obs;
   final email = 'info@gourmethaven.com'.obs;
-  final logoUrl = 'https://placehold.co/200x200/333/FFF?text=Logo'.obs;
+  final logoUrl = 'https://placehold.co/200x200/333/FFF?text=GP'.obs;
+  final bio = 'مأكولات أصيلة من قلب التراث'.obs; // NEW
+  final story = 'بدأنا رحلتنا في عام 2010 بشغف لتقديم أشهى الأطباق...'.obs; // NEW
 
-  // --- NEW: Reputation Stats ---
+  // --- Reputation Stats ---
   final averageRating = 4.8.obs;
   final reviewCount = 125.obs;
-  final responseRate = 0.85.obs; // 85% response rate
+  final responseRate = 0.85.obs;
+
+  // --- Profile Completion ---
+  final profileCompletion = 0.0.obs; // NEW: For the progress bar
 
   // --- Document Status ---
   final documents = <DocumentStatus>[
@@ -41,13 +46,29 @@ class ProfileController extends GetxController {
   void onInit() {
     super.onInit();
     restaurantNameController = TextEditingController(text: restaurantName.value);
-    bioController = TextEditingController(text: 'مأكولات أصيلة');
-    storyController = TextEditingController(text: 'نبذة عن تاريخ المطعم...');
+    bioController = TextEditingController(text: bio.value);
+    storyController = TextEditingController(text: story.value);
+    calculateProfileCompletion(); // Calculate initial completion
   }
 
-  /// Placeholder for updating location on map.
+  /// NEW: Calculate the profile completion percentage
+  void calculateProfileCompletion() {
+    double completion = 0.0;
+    // Assign points for each completed field
+    if (restaurantName.value.isNotEmpty) completion += 0.25;
+    if (logoUrl.value.isNotEmpty && !logoUrl.value.contains('placehold')) completion += 0.25;
+    if (bio.value.isNotEmpty) completion += 0.25;
+    if (story.value.isNotEmpty) completion += 0.25;
+
+    profileCompletion.value = completion;
+  }
+
   void updateLocationOnMap() {
-    CustomSnackbar.showInfo('سيتم تفعيل هذه الميزة قريباً لتمكينك من تحديد موقعك على الخريطة.');
+    CustomSnackbar.showInfo('سيتم تفعيل هذه الميزة قريباً لتحديد موقعك.');
+  }
+
+  void manageSubscription() {
+    CustomSnackbar.showInfo('سيتم تفعيل هذه الميزة قريباً لإدارة اشتراكك.');
   }
 
   void logout() {
@@ -69,7 +90,25 @@ class ProfileController extends GetxController {
     );
   }
 
-  Future<void> saveProfileChanges() async { /* ... */ }
+  Future<void> saveProfileChanges() async {
+    isSaving.value = true;
+    await Future.delayed(const Duration(seconds: 2)); // Simulate API call
+    try {
+      // Update local observables
+      restaurantName.value = restaurantNameController.text;
+      bio.value = bioController.text;
+      story.value = storyController.text;
+
+      calculateProfileCompletion(); // Recalculate completion after saving
+
+      Get.back();
+      CustomSnackbar.showSuccess('تم حفظ التغييرات بنجاح!');
+    } catch (e) {
+      CustomSnackbar.showError('حدث خطأ أثناء حفظ التغييرات.');
+    } finally {
+      isSaving.value = false;
+    }
+  }
 
   @override
   void onClose() {
@@ -79,4 +118,3 @@ class ProfileController extends GetxController {
     super.onClose();
   }
 }
-
