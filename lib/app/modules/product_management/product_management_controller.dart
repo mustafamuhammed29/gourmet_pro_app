@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:gourmet_pro_app/app/data/models/product_model.dart';
@@ -6,18 +8,14 @@ import 'package:gourmet_pro_app/app/routes/app_routes.dart';
 import 'package:gourmet_pro_app/app/shared/theme/app_colors.dart';
 
 class ProductManagementController extends GetxController {
-  // --- DEPENDENCIES ---
   final ApiProvider _apiProvider = Get.find<ApiProvider>();
 
-  // --- STATE FOR MANAGE MENU SCREEN ---
   final isLoading = true.obs;
   final RxList<ProductModel> products = <ProductModel>[].obs;
 
-  // --- STATE FOR ADD/EDIT DISH SCREEN ---
   final isEditMode = false.obs;
-  ProductModel? _editingProduct; // To hold the product being edited
+  ProductModel? _editingProduct;
 
-  // Text Editing Controllers for the form
   late TextEditingController nameArController;
   late TextEditingController nameEnController;
   late TextEditingController descriptionArController;
@@ -25,13 +23,12 @@ class ProductManagementController extends GetxController {
   late TextEditingController priceController;
   late TextEditingController categoryController;
 
-  // Loading states for various actions on the form
   final isSaving = false.obs;
   final isTranslatingName = false.obs;
   final isTranslatingDescription = false.obs;
   final isEnhancingDescription = false.obs;
 
-  // --- LIFECYCLE METHODS ---
+  final Rx<File?> pickedImage = Rx<File?>(null);
 
   @override
   void onInit() {
@@ -40,27 +37,15 @@ class ProductManagementController extends GetxController {
     fetchProducts();
   }
 
-  @override
-  void onClose() {
-    _disposeControllers();
-    super.onClose();
-  }
-
-  // --- PUBLIC METHODS for MANAGE MENU SCREEN ---
-
-  /// Fetches the list of products from the API.
   Future<void> fetchProducts() async {
     try {
       isLoading.value = true;
-      // THE FIX: We now handle the full Response object here.
       final response = await _apiProvider.getProducts();
 
-      // Check the status code and ensure the body is a list before parsing.
-      if (response.statusCode == 200 && response.body is List) {
+      if (response.isOk && response.body is List) {
         final List<dynamic> productJson = response.body;
-        final productList = productJson
-            .map((json) => ProductModel.fromJson(json))
-            .toList();
+        final productList =
+        productJson.map((json) => ProductModel.fromJson(json)).toList();
         products.assignAll(productList);
       } else {
         throw Exception('Failed to parse products from server response.');
@@ -77,24 +62,24 @@ class ProductManagementController extends GetxController {
     }
   }
 
-  /// Navigates to the screen for adding a new dish.
   void goToAddDish() {
+    _clearFormFields();
+    isEditMode.value = false;
+    _editingProduct = null;
     Get.toNamed(Routes.addEditDish);
   }
 
-  /// Navigates to the screen for editing an existing dish.
   void goToEditDish(ProductModel product) {
+    _populateFormFields(product);
+    isEditMode.value = true;
+    _editingProduct = product;
     Get.toNamed(Routes.addEditDish, arguments: product);
   }
 
-  /// Navigates to the AI feature for generating social media posts.
   void goToSocialPostGenerator(ProductModel product) {
     Get.toNamed(Routes.socialPostGenerator, arguments: product);
   }
 
-  // --- PUBLIC METHODS for ADD/EDIT DISH SCREEN ---
-
-  /// Checks if arguments were passed to determine if we are in edit mode.
   void checkEditingMode() {
     if (Get.arguments != null && Get.arguments is ProductModel) {
       isEditMode.value = true;
@@ -107,7 +92,6 @@ class ProductManagementController extends GetxController {
     }
   }
 
-  /// Handles the save button press. Either creates a new dish or updates an existing one.
   Future<void> saveDish() async {
     try {
       isSaving.value = true;
@@ -116,17 +100,16 @@ class ProductManagementController extends GetxController {
         'description': descriptionArController.text,
         'price': double.tryParse(priceController.text) ?? 0.0,
         'category': categoryController.text,
-        // 'imageUrl' would be handled after image upload implementation
       };
 
       if (isEditMode.value) {
-        await _apiProvider.updateProduct(_editingProduct!.id, dishData);
+        await _apiProvider.updateProduct(_editingProduct!.id, dishData, image: pickedImage.value);
       } else {
-        await _apiProvider.createProduct(dishData);
+        await _apiProvider.createProduct(dishData, image: pickedImage.value);
       }
 
-      await fetchProducts(); // Refresh the list
-      Get.back(); // Go back to the manage menu screen
+      await fetchProducts();
+      Get.back();
       Get.snackbar(
         'نجاح',
         isEditMode.value ? 'تم تحديث الطبق بنجاح!' : 'تم إضافة الطبق بنجاح!',
@@ -145,16 +128,13 @@ class ProductManagementController extends GetxController {
     }
   }
 
-  /// Placeholder for image picking logic.
   void pickImage() {
     Get.snackbar('قيد التطوير', 'سيتم تفعيل ميزة رفع الصور قريباً.');
   }
 
-  // --- AI Feature Simulation Methods ---
-
   Future<void> translateName() async {
     isTranslatingName.value = true;
-    await Future.delayed(const Duration(seconds: 1)); // Simulate API call
+    await Future.delayed(const Duration(seconds: 1));
     nameEnController.text = "Grilled Salmon (Translated)";
     isTranslatingName.value = false;
   }
@@ -163,7 +143,7 @@ class ProductManagementController extends GetxController {
     isTranslatingDescription.value = true;
     await Future.delayed(const Duration(seconds: 1));
     descriptionEnController.text =
-        "A short and appealing description... (Translated)";
+    "A short and appealing description... (Translated)";
     isTranslatingDescription.value = false;
   }
 
@@ -171,11 +151,9 @@ class ProductManagementController extends GetxController {
     isEnhancingDescription.value = true;
     await Future.delayed(const Duration(seconds: 2));
     descriptionArController.text =
-        "${descriptionArController.text} (وصف محسن ومميز لجذب الزبائن).";
+    "${descriptionArController.text} (وصف محسن ومميز لجذب الزبائن).";
     isEnhancingDescription.value = false;
   }
-
-  // --- PRIVATE HELPER METHODS ---
 
   void _initializeControllers() {
     nameArController = TextEditingController();
@@ -200,9 +178,9 @@ class ProductManagementController extends GetxController {
     descriptionArController.text = product.description;
     priceController.text = product.price.toString();
     categoryController.text = product.category;
-    // Reset AI fields
     nameEnController.clear();
     descriptionEnController.clear();
+    pickedImage.value = null;
   }
 
   void _clearFormFields() {
@@ -212,5 +190,12 @@ class ProductManagementController extends GetxController {
     descriptionEnController.clear();
     priceController.clear();
     categoryController.clear();
+    pickedImage.value = null;
+  }
+
+  @override
+  void onClose() {
+    _disposeControllers();
+    super.onClose();
   }
 }

@@ -1,9 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:gourmet_pro_app/app/data/models/user_model.dart';
 import 'package:gourmet_pro_app/app/data/providers/api_provider.dart';
 import 'package:gourmet_pro_app/app/routes/app_routes.dart';
 import 'package:gourmet_pro_app/app/shared/widgets/custom_snackbar.dart';
@@ -13,16 +14,16 @@ class AuthController extends GetxController {
   final _storage = GetStorage();
 
   final isLoading = false.obs;
+  var user = Rx<UserModel?>(null);
 
-  // ... (Login properties)
   final loginFormKey = GlobalKey<FormState>();
+  final registerFormKey = GlobalKey<FormState>();
+
   late TextEditingController loginEmailController;
   late TextEditingController loginPasswordController;
   final isPasswordHidden = true.obs;
 
-  // --- Register ---
-  final registerFormKey = GlobalKey<FormState>();
-  late TextEditingController fullNameController; //  <-- ١. إضافة المتحكم الجديد
+  late TextEditingController fullNameController;
   late TextEditingController restaurantNameController;
   late TextEditingController addressController;
   late TextEditingController cuisineTypeController;
@@ -30,21 +31,24 @@ class AuthController extends GetxController {
   late TextEditingController phoneNumberController;
   late TextEditingController registerPasswordController;
   late TextEditingController confirmPasswordController;
-  final isLoginPasswordHidden = true.obs;
+  final isRegisterPasswordHidden = true.obs;
 
-  // --- File Upload ---
   final Rx<File?> licenseFile = Rx<File?>(null);
-  final Rx<File?> registryFile = Rx<File?>(null);
-  String get licenseFileName => licenseFile.value?.path.split('/').last ?? '';
-  String get registryFileName =>
-      registryFile.value?.path.split('/').last ?? '';
+  final Rx<File?> commercialRegistryFile = Rx<File?>(null);
+  final licenseFileName = ''.obs;
+  final registryFileName = ''.obs;
 
   @override
   void onInit() {
     super.onInit();
+    _initializeControllers();
+    _checkToken();
+  }
+
+  void _initializeControllers() {
     loginEmailController = TextEditingController();
     loginPasswordController = TextEditingController();
-    fullNameController = TextEditingController(); //  <-- ٢. تهيئة المتحكم
+    fullNameController = TextEditingController();
     restaurantNameController = TextEditingController();
     addressController = TextEditingController();
     cuisineTypeController = TextEditingController();
@@ -54,56 +58,42 @@ class AuthController extends GetxController {
     confirmPasswordController = TextEditingController();
   }
 
-  // ... (File picking logic)
-  Future<File?> _pickSingleFile() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf'],
-    );
-    if (result != null && result.files.single.path != null) {
-      return File(result.files.single.path!);
+  void _checkToken() {
+    final token = _storage.read('token');
+    if (token != null) {
+      // تأخير الانتقال إلى ما بعد الإطار الأول لتجنب خطأ "contextless navigation"
+      Future.delayed(Duration.zero, () {
+        Get.offAllNamed(Routes.mainWrapper);
+      });
     }
-    return null;
   }
 
-  Future<void> pickLicense() async {
-    licenseFile.value = await _pickSingleFile();
-  }
-
-  Future<void> pickRegistry() async {
-    registryFile.value = await _pickSingleFile();
-  }
-
-
-  Future<void> register() async {
-    if (registerFormKey.currentState!.validate()) {
-      if (licenseFile.value == null || registryFile.value == null) {
-        CustomSnackbar.showError('يرجى رفع ملفي الرخصة والسجل التجاري.');
-        return;
-      }
+  Future<void> login() async {
+    FocusManager.instance.primaryFocus?.unfocus();
+    if (loginFormKey.currentState?.validate() ?? false) {
       isLoading(true);
       try {
-        final data = {
-          "fullName": fullNameController.text.trim(), //  <-- ٣. إرسال الاسم الكامل
-          "restaurantName": restaurantNameController.text.trim(),
-          "address": addressController.text.trim(),
-          "cuisineType": cuisineTypeController.text.trim(),
-          "email": registerEmailController.text.trim(),
-          "phoneNumber": phoneNumberController.text.trim(),
-          "password": registerPasswordController.text,
-        };
-        final files = [licenseFile.value!, registryFile.value!];
-
-        final response = await _apiProvider.registerAndUpload(data, files);
-        final responseBody = json.decode(response.body);
-
-        if (response.statusCode == 201) {
-          Get.offAllNamed(Routes.pendingApproval);
-          CustomSnackbar.showSuccess(
-              responseBody['message'] ?? 'تم إرسال طلبك بنجاح!');
+        final response = await _apiProvider.login(
+          loginEmailController.text.trim(),
+          loginPasswordController.text,
+        );
+        if (response.isOk && response.body != null) {
+          final token = response.body['access_token'];
+          final status = response.body['status'];
+          if (status == 'approved' && token != null) {
+            await _storage.write('token', token);
+            Get.offAllNamed(Routes.mainWrapper);
+          } else if (status == 'pending') {
+            Get.toNamed(Routes.pendingApproval);
+          } else {
+            CustomSnackbar.showError(
+                response.body['message'] ?? 'تم رفض حسابك.');
+          }
         } else {
           CustomSnackbar.showError(
-              responseBody['message'] ?? 'الرجاء التحقق من البيانات المدخلة.');
+            response.body?['message'] ??
+                'البريد الإلكتروني أو كلمة المرور غير صحيحة.',
+          );
         }
       } catch (e) {
         CustomSnackbar.showError('حدث خطأ غير متوقع: ${e.toString()}');
@@ -113,36 +103,78 @@ class AuthController extends GetxController {
     }
   }
 
-  // ... (Login logic and onClose)
-  Future<void> login() async {
-    if (loginFormKey.currentState!.validate()) {
+  Future<void> registerAndUploadFiles() async {
+    FocusManager.instance.primaryFocus?.unfocus();
+    if (registerFormKey.currentState?.validate() ?? false) {
+      if (licenseFile.value == null || commercialRegistryFile.value == null) {
+        CustomSnackbar.showError('الرجاء رفع كلا المستندين المطلوبين.');
+        return;
+      }
       isLoading(true);
       try {
-        final response = await _apiProvider.login(
-          loginEmailController.text.trim(),
-          loginPasswordController.text,
+        final data = {
+          'fullName': fullNameController.text.trim(),
+          'email': registerEmailController.text.trim(),
+          'password': registerPasswordController.text,
+          'phoneNumber': phoneNumberController.text.trim(),
+          'restaurantName': restaurantNameController.text.trim(),
+          'cuisineType': cuisineTypeController.text.trim(),
+          'address': addressController.text.trim(),
+        };
+
+        // --- تم التعديل هنا ---
+        final response = await _apiProvider.registerAndUpload(
+          data: data,
+          licenseFile: licenseFile.value!,
+          registryFile: commercialRegistryFile.value!,
         );
-        if (response.isOk && response.body['access_token'] != null) {
-          await _storage.write('authToken', response.body['access_token']);
-          Get.offAllNamed(Routes.mainWrapper);
+
+        // --- وتم التعديل هنا ---
+        if (response.statusCode == 201) {
+          CustomSnackbar.showSuccess(
+              'تم التسجيل بنجاح! طلبك الآن قيد المراجعة.');
+          Get.toNamed(Routes.pendingApproval);
         } else {
+          final decodedBody = jsonDecode(response.body);
           CustomSnackbar.showError(
-            response.body['message'] ??
-                'البريد الإلكتروني أو كلمة المرور غير صحيحة.',
-          );
+              decodedBody['message'] ?? 'فشل التسجيل. حاول مرة أخرى.');
         }
       } catch (e) {
-        CustomSnackbar.showError(
-          'حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.',
-        );
+        CustomSnackbar.showError('حدث خطأ غير متوقع: ${e.toString()}');
       } finally {
         isLoading(false);
       }
     }
   }
 
+  void logout() async {
+    await _storage.remove('token');
+    Get.offAllNamed(Routes.login);
+  }
+
+  Future<void> pickLicense() async {
+    final result = await FilePicker.platform.pickFiles(type: FileType.image);
+    if (result != null) {
+      licenseFile.value = File(result.files.single.path!);
+      licenseFileName.value = result.files.single.name;
+    }
+  }
+
+  Future<void> pickRegistry() async {
+    final result = await FilePicker.platform.pickFiles(type: FileType.image);
+    if (result != null) {
+      commercialRegistryFile.value = File(result.files.single.path!);
+      registryFileName.value = result.files.single.name;
+    }
+  }
+
   @override
   void onClose() {
+    _disposeControllers();
+    super.onClose();
+  }
+
+  void _disposeControllers() {
     loginEmailController.dispose();
     loginPasswordController.dispose();
     fullNameController.dispose();
@@ -153,7 +185,6 @@ class AuthController extends GetxController {
     phoneNumberController.dispose();
     registerPasswordController.dispose();
     confirmPasswordController.dispose();
-    super.onClose();
   }
 }
 

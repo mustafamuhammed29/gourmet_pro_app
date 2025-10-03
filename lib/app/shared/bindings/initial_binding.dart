@@ -1,14 +1,19 @@
 import 'package:get/get.dart';
 import 'package:gourmet_pro_app/app/data/providers/api_provider.dart';
-import '../../data/providers/socket_provider.dart';
+import 'package:gourmet_pro_app/app/data/providers/socket_provider.dart'; // <-- ١. إضافة الاستيراد
+import 'package:gourmet_pro_app/app/modules/auth/auth_controller.dart';
 
-
-class InitialBinding extends Bindings {
+class InitialBinding implements Bindings {
   @override
   void dependencies() {
-    // هنا نقوم بتسجيل كل الخدمات العامة التي يحتاجها التطبيق
-    Get.put(ApiProvider(), permanent: true);
-    Get.put(SocketProvider(), permanent: true); // <-- هذا هو السطر الجديد
+    // A single instance of ApiProvider will be created and shared across the app.
+    Get.put<ApiProvider>(ApiProvider(), permanent: true);
+
+    // Make AuthController permanent so it's not disposed
+    Get.put<AuthController>(AuthController(), permanent: true);
+
+    // Make SocketProvider available globally
+    Get.lazyPut<SocketProvider>(() => SocketProvider(), fenix: true); // <-- ٢. إضافة السطر الجديد
   }
 }
 

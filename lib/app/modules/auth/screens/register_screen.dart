@@ -25,12 +25,55 @@ class RegisterScreen extends GetView<AuthController> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                _buildSectionTitle("معلومات المالك"),
                 _buildTextField(
                   controller: controller.fullNameController,
                   labelText: 'الاسم الكامل للمالك',
                   validator: (value) =>
                   value!.isEmpty ? 'هذا الحقل مطلوب' : null,
                 ),
+                _buildTextField(
+                  controller: controller.registerEmailController,
+                  labelText: 'البريد الإلكتروني',
+                  keyboardType: TextInputType.emailAddress,
+                  validator: (value) => (value == null || !GetUtils.isEmail(value))
+                      ? 'الرجاء إدخال بريد إلكتروني صالح'
+                      : null,
+                ),
+                _buildTextField(
+                  controller: controller.phoneNumberController,
+                  labelText: 'رقم الهاتف',
+                  keyboardType: TextInputType.phone,
+                  validator: (value) =>
+                  value!.isEmpty ? 'هذا الحقل مطلوب' : null,
+                ),
+                Obx(() => _buildTextField(
+                  controller: controller.registerPasswordController,
+                  labelText: 'كلمة المرور',
+                  obscureText: controller.isRegisterPasswordHidden.value,
+                  validator: (value) => (value == null || value.length < 6)
+                      ? 'كلمة المرور يجب أن تكون 6 أحرف على الأقل'
+                      : null,
+                  suffixIcon: IconButton(
+                    icon: Icon(controller.isRegisterPasswordHidden.value
+                        ? Icons.visibility_off
+                        : Icons.visibility),
+                    onPressed: controller.isRegisterPasswordHidden.toggle,
+                  ),
+                )),
+                Obx(() => _buildTextField(
+                  controller: controller.confirmPasswordController,
+                  labelText: 'تأكيد كلمة المرور',
+                  obscureText: controller.isRegisterPasswordHidden.value,
+                  validator: (value) {
+                    if (value != controller.registerPasswordController.text) {
+                      return 'كلمتا المرور غير متطابقتين';
+                    }
+                    return null;
+                  },
+                )),
+                const SizedBox(height: 24),
+                _buildSectionTitle("معلومات المطعم"),
                 _buildTextField(
                   controller: controller.restaurantNameController,
                   labelText: 'اسم المطعم',
@@ -39,116 +82,56 @@ class RegisterScreen extends GetView<AuthController> {
                 ),
                 _buildTextField(
                   controller: controller.addressController,
-                  labelText: 'عنوان المطعم',
+                  labelText: 'العنوان',
                   validator: (value) =>
                   value!.isEmpty ? 'هذا الحقل مطلوب' : null,
                 ),
                 _buildTextField(
                   controller: controller.cuisineTypeController,
-                  labelText: 'نوع المطبخ (مثال: إيطالي, آسيوي)',
+                  labelText: 'نوع المطبخ (مثال: إيطالي، شرقي)',
                   validator: (value) =>
                   value!.isEmpty ? 'هذا الحقل مطلوب' : null,
                 ),
-                _buildTextField(
-                  controller: controller.registerEmailController,
-                  labelText: 'البريد الإلكتروني',
-                  keyboardType: TextInputType.emailAddress,
-                  validator: (value) => !GetUtils.isEmail(value!)
-                      ? 'الرجاء إدخال بريد إلكتروني صحيح'
-                      : null,
-                ),
-                _buildTextField(
-                  controller: controller.phoneNumberController,
-                  labelText: 'رقم الهاتف',
-                  keyboardType: TextInputType.phone,
-                  validator: (value) => !GetUtils.isPhoneNumber(value!)
-                      ? 'الرجاء إدخال رقم هاتف صحيح'
-                      : null,
-                ),
-                Obx(
-                      () => _buildTextField(
-                    controller: controller.registerPasswordController,
-                    labelText: 'كلمة المرور',
-                    obscureText: controller.isLoginPasswordHidden.value,
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        controller.isLoginPasswordHidden.value
-                            ? Icons.visibility_off
-                            : Icons.visibility,
-                        color: AppColors.textSecondary,
-                      ),
-                      onPressed: controller.isLoginPasswordHidden.toggle,
-                    ),
-                    validator: (value) => value!.length < 6
-                        ? 'يجب أن تكون كلمة المرور 6 أحرف على الأقل'
-                        : null,
-                  ),
-                ),
-                _buildTextField(
-                  controller: controller.confirmPasswordController,
-                  labelText: 'تأكيد كلمة المرور',
-                  obscureText: true,
-                  validator: (value) =>
-                  value != controller.registerPasswordController.text
-                      ? 'كلمتا المرور غير متطابقتين'
-                      : null,
-                ),
                 const SizedBox(height: 24),
-                const Text(
-                  'المستندات الرسمية',
-                  textAlign: TextAlign.right,
-                  style: TextStyle(
-                      color: AppColors.textPrimary,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 12),
-                _buildSingleDocumentUploader(
-                  label: 'الرخصة التجارية',
-                  onTap: () => controller.pickLicense(),
-                  fileName: controller.licenseFileName,
+                _buildSectionTitle("المستندات الرسمية"),
+                _buildFileUpload(
+                  label: "رخصة البلدية",
+                  onTap: controller.pickLicense,
+                  fileName: controller.licenseFileName.value,
                   fileObservable: controller.licenseFile,
                 ),
-                const SizedBox(height: 12),
-                _buildSingleDocumentUploader(
-                  label: 'السجل التجاري',
-                  onTap: () => controller.pickRegistry(),
-                  fileName: controller.registryFileName,
-                  fileObservable: controller.registryFile,
+                _buildFileUpload(
+                  label: "السجل التجاري",
+                  onTap: controller.pickRegistry,
+                  fileName: controller.registryFileName.value,
+                  fileObservable: controller.commercialRegistryFile,
                 ),
-                const SizedBox(height: 24),
-                Obx(() {
-                  final isLoading = controller.isLoading.value;
-                  return SizedBox(
-                    height: 50,
-                    child: ElevatedButton(
-                      onPressed: isLoading ? null : () => controller.register(),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.accent,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: isLoading
-                          ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text(
-                        'إرسال الطلب',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
+                const SizedBox(height: 32),
+                Obx(
+                      () => ElevatedButton(
+                    onPressed: controller.isLoading.value
+                        ? null
+                        : controller.registerAndUploadFiles,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.accent,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                  );
-                }),
-                const SizedBox(height: 12),
-                const Text(
-                  'سيتم مراجعة طلبك من قبل الإدارة قبل الموافقة عليه.',
-                  textAlign: TextAlign.center,
-                  style:
-                  TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                    child: controller.isLoading.value
+                        ? const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                          color: Colors.white, strokeWidth: 2),
+                    )
+                        : const Text('إنشاء حساب',
+                        style:
+                        TextStyle(fontSize: 18, color: Colors.white)),
+                  ),
                 ),
+                const SizedBox(height: 16),
               ],
             ),
           ),
@@ -157,44 +140,55 @@ class RegisterScreen extends GetView<AuthController> {
     );
   }
 
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String labelText,
-    TextInputType? keyboardType,
-    bool obscureText = false,
-    Widget? suffixIcon,
-    String? Function(String?)? validator,
-  }) {
+  Widget _buildSectionTitle(String title) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: TextFormField(
-        controller: controller,
-        decoration: InputDecoration(
-          labelText: labelText,
-          suffixIcon: suffixIcon,
-        ),
-        keyboardType: keyboardType,
-        obscureText: obscureText,
-        validator: validator,
-        textAlign: TextAlign.right,
+      padding: const EdgeInsets.only(bottom: 16.0),
+      child: Text(
+        title,
+        style: Get.textTheme.titleLarge?.copyWith(color: AppColors.textPrimary),
       ),
     );
   }
 
-  Widget _buildSingleDocumentUploader({
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String labelText,
+    String? Function(String?)? validator,
+    bool obscureText = false,
+    TextInputType? keyboardType,
+    Widget? suffixIcon,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0),
+      child: TextFormField(
+        controller: controller,
+        decoration: InputDecoration(
+          labelText: labelText,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          suffixIcon: suffixIcon,
+        ),
+        validator: validator,
+        obscureText: obscureText,
+        keyboardType: keyboardType,
+      ),
+    );
+  }
+
+  Widget _buildFileUpload({
     required String label,
     required VoidCallback onTap,
     required String fileName,
     required Rx<File?> fileObservable,
   }) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label, style: const TextStyle(color: AppColors.textSecondary)),
         const SizedBox(height: 8),
-        InkWell(
+        GestureDetector(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
             width: double.infinity,
@@ -233,6 +227,7 @@ class RegisterScreen extends GetView<AuthController> {
             }),
           ),
         ),
+        const SizedBox(height: 16),
       ],
     );
   }
