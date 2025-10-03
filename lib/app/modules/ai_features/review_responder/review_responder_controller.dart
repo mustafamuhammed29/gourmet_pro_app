@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:gourmet_pro_app/app/data/providers/api_provider.dart';
 
 class ReviewResponderController extends GetxController {
+  final ApiProvider _apiProvider = Get.find<ApiProvider>();
+
   // للتحكم في حقل إدخال تقييم الزبون
   final TextEditingController reviewInputController = TextEditingController();
 
@@ -27,16 +30,17 @@ class ReviewResponderController extends GetxController {
 
     try {
       isGenerating.value = true; // بدء التحميل
+      aiResponse.value = ''; // إفراغ الرد القديم
 
-      // --- محاكاة استدعاء API ---
-      // في التطبيق الحقيقي، سنستدعي هنا دالة من ApiProvider
-      // final response = await _apiProvider.generateAiResponse(reviewInputController.text);
-      // aiResponse.value = response;
-      await Future.delayed(const Duration(seconds: 2)); // انتظار وهمي
-      aiResponse.value =
-      'شكراً جزيلاً لك على كلماتك الرائعة! يسعدنا جداً أنك استمتعت بالطعام والخدمة. فريقنا يعمل بجد لتقديم أفضل تجربة ممكنة، ورضاكم هو أكبر تقدير لنا. نتطلع لزيارتك مرة أخرى قريباً!';
-      // --- نهاية المحاكاة ---
-
+      // --- استدعاء API حقيقي ---
+      final response =
+      await _apiProvider.generateReviewResponse(reviewInputController.text);
+      if (response.isOk) {
+        aiResponse.value = response.body['content'];
+      } else {
+        throw Exception('Failed to generate response');
+      }
+      // --- نهاية التعديل ---
     } catch (e) {
       // التعامل مع أي أخطاء قد تحدث أثناء الاتصال بالـ API
       Get.snackbar(
@@ -57,3 +61,4 @@ class ReviewResponderController extends GetxController {
     super.onClose();
   }
 }
+

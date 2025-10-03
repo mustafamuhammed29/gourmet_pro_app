@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:gourmet_pro_app/app/data/providers/api_provider.dart';
 import 'package:gourmet_pro_app/app/routes/app_routes.dart';
 import '../../shared/theme/app_colors.dart';
 import '../../shared/widgets/custom_snackbar.dart';
@@ -14,13 +15,14 @@ class DocumentStatus {
 
 class ProfileController extends GetxController {
   final _storage = GetStorage();
+  final ApiProvider _apiProvider = Get.find<ApiProvider>(); // ✨ حقن الـ API Provider
 
   // --- Main Profile Info ---
-  final restaurantName = 'مطعم الذواقة'.obs;
-  final email = 'info@gourmethaven.com'.obs;
+  final restaurantName = ''.obs; // ✨ سيتم جلبه من الـ API
+  final email = ''.obs; // ✨ سيتم جلبه من الـ API
   final logoUrl = 'https://placehold.co/200x200/333/FFF?text=GP'.obs;
-  final bio = 'مأكولات أصيلة من قلب التراث'.obs; // NEW
-  final story = 'بدأنا رحلتنا في عام 2010 بشغف لتقديم أشهى الأطباق...'.obs; // NEW
+  final bio = ''.obs;
+  final story = ''.obs;
 
   // --- Reputation Stats ---
   final averageRating = 4.8.obs;
@@ -28,35 +30,70 @@ class ProfileController extends GetxController {
   final responseRate = 0.85.obs;
 
   // --- Profile Completion ---
-  final profileCompletion = 0.0.obs; // NEW: For the progress bar
+  final profileCompletion = 0.0.obs;
 
   // --- Document Status ---
-  final documents = <DocumentStatus>[
-    DocumentStatus('الرخصة التجارية', 'approved'),
-    DocumentStatus('السجل التجاري', 'pending'),
-  ].obs;
+  final documents = <DocumentStatus>[].obs; // ✨ سيتم جلبه من الـ API
 
   // --- Edit Profile State ---
   late TextEditingController restaurantNameController;
   late TextEditingController bioController;
   late TextEditingController storyController;
   final isSaving = false.obs;
+  final isLoadingProfile = true.obs; // ✨ متغير جديد لحالة التحميل
 
   @override
   void onInit() {
     super.onInit();
-    restaurantNameController = TextEditingController(text: restaurantName.value);
-    bioController = TextEditingController(text: bio.value);
-    storyController = TextEditingController(text: story.value);
-    calculateProfileCompletion(); // Calculate initial completion
+    restaurantNameController = TextEditingController();
+    bioController = TextEditingController();
+    storyController = TextEditingController();
+    fetchProfileData(); // ✨ استدعاء الدالة لجلب البيانات
   }
 
-  /// NEW: Calculate the profile completion percentage
+  /// ✨ دالة جديدة لجلب بيانات الملف الشخصي من الخادم
+  Future<void> fetchProfileData() async {
+    try {
+      isLoadingProfile.value = true;
+      final response = await _apiProvider.getMyRestaurant();
+
+      if (response.isOk) {
+        final data = response.body;
+
+        // تحديث البيانات المرصودة (observables)
+        restaurantName.value = data['name'] ?? '';
+        // البريد الإلكتروني للمالك سيكون في مكان آخر (ربما AuthController)
+        // email.value = data['owner']['email'] ?? '';
+        bio.value = data['bio'] ?? 'نبذة تعريفية قصيرة عن المطعم';
+        story.value = data['story'] ?? 'قصتنا...';
+
+        // تحديث متحكمات النصوص للنموذج
+        restaurantNameController.text = restaurantName.value;
+        bioController.text = bio.value;
+        storyController.text = story.value;
+
+        // يمكنك أيضاً جلب حالة المستندات هنا إذا كانت متوفرة في الـ API
+        documents.assignAll([
+          DocumentStatus('الرخصة التجارية', 'approved'),
+          DocumentStatus('السجل التجاري', 'pending'),
+        ]);
+
+        calculateProfileCompletion();
+      } else {
+        CustomSnackbar.showError('فشل في جلب بيانات الملف الشخصي.');
+      }
+    } catch (e) {
+      CustomSnackbar.showError('حدث خطأ في الشبكة: ${e.toString()}');
+    } finally {
+      isLoadingProfile.value = false;
+    }
+  }
+
   void calculateProfileCompletion() {
     double completion = 0.0;
-    // Assign points for each completed field
     if (restaurantName.value.isNotEmpty) completion += 0.25;
-    if (logoUrl.value.isNotEmpty && !logoUrl.value.contains('placehold')) completion += 0.25;
+    if (logoUrl.value.isNotEmpty && !logoUrl.value.contains('placehold'))
+      completion += 0.25;
     if (bio.value.isNotEmpty) completion += 0.25;
     if (story.value.isNotEmpty) completion += 0.25;
 
@@ -84,7 +121,7 @@ class ProfileController extends GetxController {
       confirmTextColor: Colors.white,
       buttonColor: AppColors.accentHover,
       onConfirm: () {
-        _storage.remove('authToken');
+        _storage.remove('token');
         Get.offAllNamed(Routes.login);
       },
     );
@@ -92,17 +129,24 @@ class ProfileController extends GetxController {
 
   Future<void> saveProfileChanges() async {
     isSaving.value = true;
-    await Future.delayed(const Duration(seconds: 2)); // Simulate API call
     try {
-      // Update local observables
-      restaurantName.value = restaurantNameController.text;
-      bio.value = bioController.text;
-      story.value = storyController.text;
+      final dataToUpdate = {
+        'name': restaurantNameController.text,
+        'bio': bioController.text,
+        'story': storyController.text,
+        // يمكنك إضافة أي حقول أخرى هنا
+      };
 
-      calculateProfileCompletion(); // Recalculate completion after saving
+      // ✨ استدعاء الـ API لتحديث البيانات
+      final response = await _apiProvider.updateMyRestaurant(dataToUpdate);
 
-      Get.back();
-      CustomSnackbar.showSuccess('تم حفظ التغييرات بنجاح!');
+      if (response.isOk) {
+        await fetchProfileData(); // إعادة جلب البيانات لتحديث الواجهة
+        Get.back();
+        CustomSnackbar.showSuccess('تم حفظ التغييرات بنجاح!');
+      } else {
+        throw Exception('Failed to save changes');
+      }
     } catch (e) {
       CustomSnackbar.showError('حدث خطأ أثناء حفظ التغييرات.');
     } finally {
@@ -118,3 +162,4 @@ class ProfileController extends GetxController {
     super.onClose();
   }
 }
+

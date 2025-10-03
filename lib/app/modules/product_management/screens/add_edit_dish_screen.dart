@@ -4,12 +4,13 @@ import 'package:gourmet_pro_app/app/modules/product_management/product_managemen
 import 'package:gourmet_pro_app/app/shared/theme/app_colors.dart';
 import 'package:gourmet_pro_app/app/shared/widgets/custom_button.dart';
 
+import '../../../shared/constants/api_constants.dart';
+
 class AddEditDishScreen extends GetView<ProductManagementController> {
   const AddEditDishScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Use onReady in the controller for checking editing mode
     WidgetsBinding.instance.addPostFrameCallback((_) {
       controller.checkEditingMode();
     });
@@ -125,36 +126,78 @@ class AddEditDishScreen extends GetView<ProductManagementController> {
     );
   }
 
+  // ✨ --- تم تحديث هذا الويدجت بالكامل --- ✨
   Widget _buildImageUploader() {
-    return AspectRatio(
-      aspectRatio: 16 / 9,
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.bgSecondary,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.bgTertiary),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.image_outlined,
-                color: AppColors.textSecondary, size: 48),
-            const SizedBox(height: 8),
-            TextButton(
-              onPressed: controller.pickImage,
-              child: const Text(
-                'رفع صورة',
-                style: TextStyle(
-                    color: AppColors.textPrimary, fontWeight: FontWeight.bold),
+    return Obx(() {
+      final pickedImage = controller.pickedImage.value;
+      final existingImageUrl = controller.isEditMode.value
+          ? (Get.arguments as dynamic).imageUrl
+          : null;
+
+      Widget imageWidget;
+
+      if (pickedImage != null) {
+        // إذا اختار المستخدم صورة جديدة
+        imageWidget = Image.file(pickedImage, fit: BoxFit.cover);
+      } else if (existingImageUrl != null) {
+        // إذا كان في وضع التعديل وهناك صورة موجودة
+        imageWidget = Image.network(
+          '${ApiConstants.baseUrl}/$existingImageUrl', // بناء المسار الكامل للصورة
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) => _buildPlaceholder(),
+        );
+      } else {
+        // الحالة الافتراضية (إضافة جديد أو لا توجد صورة)
+        imageWidget = _buildPlaceholder();
+      }
+
+      return GestureDetector(
+        onTap: controller.pickImage,
+        child: AspectRatio(
+          aspectRatio: 16 / 9,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              decoration: BoxDecoration(
+                color: AppColors.bgSecondary,
+                border: Border.all(color: AppColors.bgTertiary),
               ),
-              style: TextButton.styleFrom(
-                backgroundColor: AppColors.bgTertiary,
-                padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  imageWidget,
+                  // إضافة أيقونة الكاميرا فوق الصورة
+                  Container(
+                    color: Colors.black.withOpacity(0.3),
+                    child: const Center(
+                      child: Icon(
+                        Icons.camera_alt_outlined,
+                        color: Colors.white70,
+                        size: 40,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
+          ),
         ),
-      ),
+      );
+    });
+  }
+
+  // ويدجت مساعد لعرض المحتوى الافتراضي لمربع الصورة
+  Widget _buildPlaceholder() {
+    return const Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(Icons.image_outlined, color: AppColors.textSecondary, size: 48),
+        SizedBox(height: 8),
+        Text(
+          'اختر صورة',
+          style: TextStyle(color: AppColors.textSecondary),
+        )
+      ],
     );
   }
 

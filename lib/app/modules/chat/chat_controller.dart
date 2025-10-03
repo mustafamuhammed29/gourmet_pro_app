@@ -1,24 +1,46 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:gourmet_pro_app/app/data/providers/api_provider.dart';
 import 'package:gourmet_pro_app/app/data/providers/socket_provider.dart';
 
-// نموذج بيانات بسيط لتمثيل الرسالة داخل واجهة المستخدم
+// ✨ نموذج بيانات حقيقي يطابق بيانات الخادم
 class ChatMessage {
+  final String id;
   final String content;
-  final bool isSentByMe; // لتحديد ما إذا كانت الرسالة مرسلة من المستخدم الحالي أم مستلمة
+  final int senderId;
+  final DateTime createdAt;
+  final bool isSentByMe;
 
-  ChatMessage({required this.content, required this.isSentByMe});
+  ChatMessage({
+    required this.id,
+    required this.content,
+    required this.senderId,
+    required this.createdAt,
+    required this.isSentByMe,
+  });
+
+  factory ChatMessage.fromJson(Map<String, dynamic> json, int currentUserId) {
+    final senderId = json['sender']['id'];
+    return ChatMessage(
+      id: json['id'],
+      content: json['content'],
+      senderId: senderId,
+      createdAt: DateTime.parse(json['createdAt']),
+      isSentByMe: senderId == currentUserId,
+    );
+  }
 }
 
 class ChatController extends GetxController {
-  // حقن SocketProvider للعثور على النسخة النشطة منه
   final SocketProvider _socketProvider = Get.find<SocketProvider>();
+  final ApiProvider _apiProvider = Get.find<ApiProvider>();
 
-  // قائمة الرسائل، ستكون تفاعلية (reactive) بفضل .obs
   var messages = <ChatMessage>[].obs;
-
-  // متحكم في حقل إدخال النص
   final messageController = TextEditingController();
+
+  final isLoading = true.obs;
+  int? _threadId;
+  int? _currentUserId;
 
   @override
   void onInit() {
@@ -26,54 +48,72 @@ class ChatController extends GetxController {
     _initializeChat();
   }
 
-  void _initializeChat() {
-    // بدء الاتصال بالخادم عند فتح شاشة الدردشة
-    _socketProvider.connect();
+  Future<void> _initializeChat() async {
+    try {
+      isLoading.value = true;
+      // ١. جلب سجل المحادثة ومعرف المستخدم أولاً
+      final response = await _apiProvider.getMyChatThread();
 
-    // إضافة رسالة ترحيبية أولية
-    messages.add(ChatMessage(
-      content: 'أهلاً بك في Gourmet Pro! كيف يمكننا مساعدتك اليوم؟',
-      isSentByMe: false,
-    ));
+      if (response.isOk) {
+        final data = response.body;
+        _threadId = data['thread']['id'];
+        _currentUserId = data['userId'];
 
-    // الاستماع لحدث "receiveMessage" القادم من الخادم
-    _socketProvider.socket.on('receiveMessage', (data) {
-      if (data is Map<String, dynamic> && data.containsKey('content')) {
-        // إنشاء كائن رسالة جديد وإضافته إلى القائمة
-        // نفترض أن أي رسالة قادمة من الخادم هي من فريق الدعم
-        final receivedMessage = ChatMessage(
-          content: data['content'],
-          isSentByMe: false,
-        );
-        messages.add(receivedMessage);
+        final List previousMessages = data['messages'];
+        messages.assignAll(previousMessages
+            .map((msg) => ChatMessage.fromJson(msg, _currentUserId!))
+            .toList());
+
+        // ٢. الاتصال بالـ Socket بعد الحصول على البيانات
+        _socketProvider.connect();
+
+        // ٣. الاستماع للرسائل الجديدة
+        _socketProvider.socket.on('chat', (data) {
+          if (data is Map<String, dynamic>) {
+            final receivedMessage = ChatMessage.fromJson(data, _currentUserId!);
+            // التأكد من عدم إضافة الرسالة مرتين (إذا تمت إضافتها بشكل متفائل)
+            if (!messages.any((m) => m.id == receivedMessage.id)) {
+              messages.insert(0, receivedMessage);
+            }
+          }
+        });
+      } else {
+        throw Exception('Failed to fetch chat thread.');
       }
-    });
+    } catch (e) {
+      Get.snackbar('خطأ', 'فشل في تهيئة الدردشة. حاول مرة أخرى.');
+    } finally {
+      isLoading.value = false;
+    }
   }
 
-  // دالة لإرسال رسالة جديدة
   void sendMessage() {
     final text = messageController.text.trim();
-    if (text.isNotEmpty) {
-      final message = ChatMessage(content: text, isSentByMe: true);
-      messages.add(message); // إضافة الرسالة إلى الواجهة فوراً
+    if (text.isNotEmpty && _threadId != null) {
+      // إضافة الرسالة للواجهة فوراً لتحسين تجربة المستخدم (Optimistic UI)
+      final optimisticMessage = ChatMessage(
+        id: DateTime.now().toIso8601String(), // معرف مؤقت
+        content: text,
+        senderId: _currentUserId!,
+        createdAt: DateTime.now(),
+        isSentByMe: true,
+      );
+      messages.insert(0, optimisticMessage);
 
-      // إرسال الرسالة إلى الخادم عبر حدث "sendMessage"
-      // ملاحظة: في تطبيق حقيقي، يجب أن يكون threadId ديناميكياً
-      _socketProvider.socket.emit('sendMessage', {
+      // ٤. إرسال الرسالة إلى الخادم مع معرّف المحادثة الحقيقي
+      _socketProvider.socket.emit('chat', {
         'content': text,
-        'threadId': 'mock_thread_id_for_now',
+        'threadId': _threadId,
       });
 
-      messageController.clear(); // مسح حقل الإدخال بعد الإرسال
+      messageController.clear();
     }
   }
 
   @override
   void onClose() {
-    // قطع الاتصال بالخادم عند إغلاق الشاشة لتوفير الموارد
     _socketProvider.disconnect();
     messageController.dispose();
     super.onClose();
   }
 }
-

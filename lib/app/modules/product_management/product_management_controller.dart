@@ -6,9 +6,11 @@ import 'package:gourmet_pro_app/app/data/models/product_model.dart';
 import 'package:gourmet_pro_app/app/data/providers/api_provider.dart';
 import 'package:gourmet_pro_app/app/routes/app_routes.dart';
 import 'package:gourmet_pro_app/app/shared/theme/app_colors.dart';
+import 'package:image_picker/image_picker.dart'; // ✨ ١. استيراد المكتبة
 
 class ProductManagementController extends GetxController {
   final ApiProvider _apiProvider = Get.find<ApiProvider>();
+  final ImagePicker _picker = ImagePicker(); // ✨ ٢. إنشاء نسخة من المكتبة
 
   final isLoading = true.obs;
   final RxList<ProductModel> products = <ProductModel>[].obs;
@@ -95,15 +97,16 @@ class ProductManagementController extends GetxController {
   Future<void> saveDish() async {
     try {
       isSaving.value = true;
-      final Map<String, dynamic> dishData = {
+      final dishData = {
         'name': nameArController.text,
         'description': descriptionArController.text,
-        'price': double.tryParse(priceController.text) ?? 0.0,
+        'price': priceController.text, // الإرسال كنص أفضل
         'category': categoryController.text,
       };
 
       if (isEditMode.value) {
-        await _apiProvider.updateProduct(_editingProduct!.id, dishData, image: pickedImage.value);
+        await _apiProvider.updateProduct(_editingProduct!.id.toString(), dishData,
+            image: pickedImage.value);
       } else {
         await _apiProvider.createProduct(dishData, image: pickedImage.value);
       }
@@ -128,8 +131,16 @@ class ProductManagementController extends GetxController {
     }
   }
 
-  void pickImage() {
-    Get.snackbar('قيد التطوير', 'سيتم تفعيل ميزة رفع الصور قريباً.');
+  // ✨ ٣. تفعيل دالة اختيار الصور
+  Future<void> pickImage() async {
+    try {
+      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+      if (image != null) {
+        pickedImage.value = File(image.path);
+      }
+    } catch (e) {
+      Get.snackbar('خطأ', 'فشل في اختيار الصورة.');
+    }
   }
 
   Future<void> translateName() async {

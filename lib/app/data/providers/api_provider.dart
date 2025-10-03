@@ -45,14 +45,14 @@ class ApiProvider extends GetConnect {
 
     request.files.add(
       await http.MultipartFile.fromPath(
-        'licenseFile', // <-- اسم الحقل الصحيح
+        'licenseFile',
         licenseFile.path,
         filename: licenseFile.path.split('/').last,
       ),
     );
     request.files.add(
       await http.MultipartFile.fromPath(
-        'registryFile', // <-- اسم الحقل الصحيح
+        'registryFile',
         registryFile.path,
         filename: registryFile.path.split('/').last,
       ),
@@ -62,7 +62,7 @@ class ApiProvider extends GetConnect {
     return await http.Response.fromStream(streamedResponse);
   }
 
-  // --- دوال المنتجات ---
+  // --- Product Functions ---
   Future<Response> getProducts() => get('/products');
 
   Future<Response> createProduct(Map<String, dynamic> data, {File? image}) {
@@ -74,7 +74,6 @@ class ApiProvider extends GetConnect {
     return post('/products', form);
   }
 
-  // --- تم التعديل هنا ---
   Future<Response> updateProduct(String id, Map<String, dynamic> data, {File? image}) {
     final form = FormData(data);
     if (image != null) {
@@ -84,7 +83,32 @@ class ApiProvider extends GetConnect {
     return patch('/products/$id', form);
   }
 
-  // --- تم التعديل هنا ---
   Future<Response> deleteProduct(String id) => delete('/products/$id');
+
+  // --- Chat Functions ---
+  Future<Response> getMyChatThread() => get('/chat/my-thread');
+
+  // --- Restaurant Functions ---
+  Future<Response> getMyRestaurant() => get('/restaurants/my-restaurant');
+
+  Future<Response> updateMyRestaurant(Map<String, dynamic> data) =>
+      patch('/restaurants/my-restaurant', data);
+
+  // --- ✨ AI Functions (Added) ---
+  Future<Response> translateText(String text) =>
+      post('/ai/translate', {'text': text});
+
+  Future<Response> enhanceDescription(String description) =>
+      post('/ai/enhance-description', {'description': description});
+
+  Future<Response> generateReviewResponse(String review) =>
+      post('/ai/generate-review-response', {'review': review});
+
+  Future<Response> generateSocialPost(
+      String dishName, String dishDescription) =>
+      post('/ai/generate-social-post', {
+        'dishName': dishName,
+        'dishDescription': dishDescription,
+      });
 }
 

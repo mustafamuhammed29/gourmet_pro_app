@@ -17,7 +17,8 @@ class SplashController extends GetxController {
     // Wait for a bit on the splash screen for branding purposes
     await Future.delayed(const Duration(seconds: 2));
 
-    final String? token = _storage.read('authToken');
+    // The key must be 'token' to match what's saved in AuthController.
+    final String? token = _storage.read('token');
 
     if (token != null && token.isNotEmpty) {
       // If a token exists, the user is likely logged in
@@ -32,16 +33,19 @@ class SplashController extends GetxController {
   Future<void> launchWhatsApp() async {
     // Replace with your business phone number including the country code
     const String phoneNumber = '+966000000000';
-    const String message = 'أهلاً Gourmet Pro، أنا مهتم بفتح مطعم جديد وأود معرفة المزيد عن خدماتكم.';
+    const String message =
+        'أهلاً Gourmet Pro، أنا مهتم بفتح مطعم جديد وأود معرفة المزيد عن خدماتكم.';
 
     // Encode the message to be URL-safe
     final String encodedMessage = Uri.encodeComponent(message);
-    final Uri whatsappUrl = Uri.parse('https://wa.me/$phoneNumber?text=$encodedMessage');
+    final Uri whatsappUrl =
+    Uri.parse('https://wa.me/$phoneNumber?text=$encodedMessage');
 
     if (await canLaunchUrl(whatsappUrl)) {
       await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
     } else {
-      CustomSnackbar.showError('لا يمكن فتح واتساب. يرجى التأكد من تثبيته على جهازك.');
+      CustomSnackbar.showError(
+          'لا يمكن فتح واتساب. يرجى التأكد من تثبيته على جهازك.');
     }
   }
 }

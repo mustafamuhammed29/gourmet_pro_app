@@ -1,7 +1,10 @@
 import 'package:get/get.dart';
 import 'package:gourmet_pro_app/app/data/models/product_model.dart';
+import 'package:gourmet_pro_app/app/data/providers/api_provider.dart';
 
 class SocialPostGeneratorController extends GetxController {
+  final ApiProvider _apiProvider = Get.find<ApiProvider>();
+
   // متغير لمراقبة حالة التحميل
   final RxBool isGenerating = false.obs;
 
@@ -32,23 +35,20 @@ class SocialPostGeneratorController extends GetxController {
     }
 
     try {
-      isGenerating.value = true; // بدء التحميل
+      isGenerating.value = true;
+      aiResponse.value = ''; // إفراغ الرد القديم
 
-      // --- محاكاة استدعاء API ---
-      // final response = await _apiProvider.generateSocialPost(product.value!);
-      // aiResponse.value = response;
-      await Future.delayed(const Duration(seconds: 2)); // انتظار وهمي
-      aiResponse.value = '''
-🔥 لا تفوتوا تجربة طبقنا الأكثر طلباً: ${product.value!.name}! 🔥
-
-${product.value!.description}
-
-مثالية لغداء عمل أو عشاء لا يُنسى.
-
-#مطعم_الذواقة #${product.value!.name.replaceAll(' ', '_')} #${product.value!.category} #مطاعم_المدينة #غداء #عشاء
-''';
-      // --- نهاية المحاكاة ---
-
+      // --- استدعاء API حقيقي ---
+      final response = await _apiProvider.generateSocialPost(
+        product.value!.name,
+        product.value!.description,
+      );
+      if (response.isOk) {
+        aiResponse.value = response.body['content'];
+      } else {
+        throw Exception('Failed to generate post');
+      }
+      // --- نهاية التعديل ---
     } catch (e) {
       Get.snackbar('خطأ', 'حدث خطأ أثناء إنشاء المنشور.');
     } finally {
@@ -56,3 +56,4 @@ ${product.value!.description}
     }
   }
 }
+
