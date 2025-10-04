@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:gourmet_pro_app/app/routes/app_routes.dart';
 import 'package:gourmet_pro_app/app/shared/constants/api_constants.dart';
+import 'package:http/http.dart' as http;
 
 class ApiProvider extends GetConnect {
   final GetStorage _storage = GetStorage();
@@ -32,24 +33,33 @@ class ApiProvider extends GetConnect {
   Future<Response> login(String email, String password) =>
       post('/auth/login', {'email': email, 'password': password});
 
-  Future<Response> registerAndUpload({
+  Future<http.Response> registerAndUpload({
     required Map<String, String> data,
     required File licenseFile,
     required File registryFile,
   }) async {
-    final form = FormData(data);
+    final uri = Uri.parse('${ApiConstants.baseUrl}/auth/register');
+    final request = http.MultipartRequest('POST', uri);
 
-    form.files.add(MapEntry(
-      'licenseFile',
-      MultipartFile(licenseFile, filename: licenseFile.path.split('/').last),
-    ));
+    request.fields.addAll(data);
 
-    form.files.add(MapEntry(
-      'registryFile',
-      MultipartFile(registryFile, filename: registryFile.path.split('/').last),
-    ));
+    request.files.add(
+      await http.MultipartFile.fromPath(
+        'licenseFile',
+        licenseFile.path,
+        filename: licenseFile.path.split('/').last,
+      ),
+    );
+    request.files.add(
+      await http.MultipartFile.fromPath(
+        'registryFile',
+        registryFile.path,
+        filename: registryFile.path.split('/').last,
+      ),
+    );
 
-    return post('/auth/register', form);
+    final streamedResponse = await request.send();
+    return await http.Response.fromStream(streamedResponse);
   }
 
   // --- Product Functions ---

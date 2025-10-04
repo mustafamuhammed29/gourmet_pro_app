@@ -97,79 +97,32 @@ class ProductManagementController extends GetxController {
   Future<void> saveDish() async {
     try {
       isSaving.value = true;
-
-      // التحقق من صحة البيانات
-      if (nameArController.text.trim().isEmpty) {
-        Get.snackbar('خطأ', 'يرجى إدخال اسم الطبق');
-        return;
-      }
-
-      if (descriptionArController.text.trim().isEmpty) {
-        Get.snackbar('خطأ', 'يرجى إدخال وصف الطبق');
-        return;
-      }
-
-      if (priceController.text.trim().isEmpty) {
-        Get.snackbar('خطأ', 'يرجى إدخال سعر الطبق');
-        return;
-      }
-
-      // التحقق من صحة السعر
-      double? price = double.tryParse(priceController.text.trim());
-      if (price == null || price <= 0) {
-        Get.snackbar('خطأ', 'يرجى إدخال سعر صحيح');
-        return;
-      }
-
       final dishData = {
-        'name': nameArController.text.trim(),
-        'description': descriptionArController.text.trim(),
-        'price': price.toString(),
-        'category': categoryController.text.trim().isEmpty
-            ? 'عام'
-            : categoryController.text.trim(),
+        'name': nameArController.text,
+        'description': descriptionArController.text,
+        'price': priceController.text, // الإرسال كنص أفضل
+        'category': categoryController.text,
       };
 
-      Response response;
       if (isEditMode.value) {
-        response = await _apiProvider.updateProduct(
-            _editingProduct!.id.toString(),
-            dishData,
-            image: pickedImage.value
-        );
+        await _apiProvider.updateProduct(_editingProduct!.id.toString(), dishData,
+            image: pickedImage.value);
       } else {
-        response = await _apiProvider.createProduct(
-            dishData,
-            image: pickedImage.value
-        );
+        await _apiProvider.createProduct(dishData, image: pickedImage.value);
       }
 
-      if (response.isOk) {
-        await fetchProducts();
-        Get.back();
-        Get.snackbar(
-          'نجاح',
-          isEditMode.value ? 'تم تحديث الطبق بنجاح!' : 'تم إضافة الطبق بنجاح!',
-          backgroundColor: AppColors.accent,
-          colorText: Colors.white,
-        );
-      } else {
-        String errorMessage = 'فشل في حفظ الطبق';
-        if (response.body != null && response.body['message'] != null) {
-          errorMessage = response.body['message'];
-        }
-        Get.snackbar(
-          'خطأ',
-          errorMessage,
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-        );
-      }
+      await fetchProducts();
+      Get.back();
+      Get.snackbar(
+        'نجاح',
+        isEditMode.value ? 'تم تحديث الطبق بنجاح!' : 'تم إضافة الطبق بنجاح!',
+        backgroundColor: AppColors.accent,
+        colorText: Colors.white,
+      );
     } catch (e) {
-      print('Error saving dish: $e');
       Get.snackbar(
         'خطأ',
-        'فشل في حفظ الطبق. تحقق من الاتصال بالإنترنت.',
+        'فشل في حفظ الطبق. يرجى التأكد من البيانات.',
         backgroundColor: Colors.red,
         colorText: Colors.white,
       );
