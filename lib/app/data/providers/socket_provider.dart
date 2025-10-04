@@ -10,15 +10,18 @@ class SocketProvider extends GetxService {
   @override
   void onInit() {
     super.onInit();
-    // نقوم بإنشاء كائن الـ socket ولكن لا نتصل به تلقائياً
-    // ✨ تم تحديث الإعدادات لتشمل المصادقة والمسار الصحيح
+    // إنشاء socket للدردشة مع namespace محدد
     socket = IO.io(
-      ApiConstants.baseUrl,
+      '${ApiConstants.baseUrl}/chat', // إضافة namespace للدردشة
       IO.OptionBuilder()
-          .setTransports(['websocket'])
-          .setPath('/socket.io') // المسار الافتراضي لـ socket.io
-          .setAuth({'token': _storage.read('token')}) // إرسال التوكن للمصادقة
-          .disableAutoConnect() // مهم جداً: لا تتصل تلقائياً
+          .setTransports(['websocket', 'polling'])
+          .setPath('/socket.io')
+          .setAuth({'token': _storage.read('token')})
+          .setExtraHeaders({'Authorization': 'Bearer ${_storage.read('token')}'})
+          .enableAutoConnect() // تفعيل الاتصال التلقائي للدردشة
+          .enableReconnection()
+          .setReconnectionAttempts(5)
+          .setReconnectionDelay(1000)
           .build(),
     );
 
@@ -26,18 +29,46 @@ class SocketProvider extends GetxService {
   }
 
   void _setupSocketListeners() {
-    socket.onConnect((_) => print('Socket connected: ${socket.id}'));
-    socket.onDisconnect((_) => print('Socket disconnected'));
-    socket.onConnectError((data) => print('Connection Error: $data'));
-    socket.onError((data) => print('Socket Error: $data'));
+    socket.onConnect((_) {
+      print('Chat socket connected: ${socket.id}');
+    });
+
+    socket.onDisconnect((_) {
+      print('Chat socket disconnected');
+    });
+
+    socket.onConnectError((data) {
+      print('Chat connection error: $data');
+    });
+
+    socket.onError((data) {
+      print('Chat socket error: $data');
+    });
+
+    // استماع لرسالة الترحيب
+    socket.on('connected', (data) {
+      print('Chat connected successfully: $data');
+    });
+
+    // استماع لرسائل الدردشة
+    socket.on('chat', (data) {
+      print('New chat message received: $data');
+      // يمكن إضافة معالجة إضافية هنا
+    });
   }
 
   /// دالة عامة لبدء الاتصال بالخادم
   void connect() {
     if (!socket.connected) {
-      // التأكد من أن التوكن محدّث قبل كل محاولة اتصال
-      socket.auth = {'token': _storage.read('token')};
-      socket.connect();
+      // تحديث التوكن قبل الاتصال
+      final token = _storage.read('token');
+      if (token != null) {
+        socket.auth = {'token': token};
+        socket.io.options?['extraHeaders'] = {'Authorization': 'Bearer $token'};
+        socket.connect();
+      } else {
+        print('No token found, cannot connect to chat');
+      }
     }
   }
 
@@ -45,6 +76,18 @@ class SocketProvider extends GetxService {
   void disconnect() {
     if (socket.connected) {
       socket.disconnect();
+    }
+  }
+
+  /// إرسال رسالة دردشة
+  void sendMessage(String content, int threadId) {
+    if (socket.connected) {
+      socket.emit('chat', {
+        'content': content,
+        'threadId': threadId,
+      });
+    } else {
+      print('Socket not connected, cannot send message');
     }
   }
 

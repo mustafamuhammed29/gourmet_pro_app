@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:gourmet_pro_app/app/modules/auth/auth_controller.dart';
 import 'package:gourmet_pro_app/app/routes/app_routes.dart';
 import 'package:gourmet_pro_app/app/shared/theme/app_colors.dart';
+import 'package:gourmet_pro_app/app/shared/utils/validators.dart';
 
 class LoginScreen extends GetView<AuthController> {
   const LoginScreen({super.key});
@@ -42,9 +43,7 @@ class LoginScreen extends GetView<AuthController> {
                     controller: controller.loginEmailController,
                     labelText: 'البريد الإلكتروني',
                     keyboardType: TextInputType.emailAddress,
-                    validator: (value) => (value == null || !GetUtils.isEmail(value))
-                        ? 'الرجاء إدخال بريد إلكتروني صالح'
-                        : null,
+                    validator: Validators.validateEmail,
                   ),
                   const SizedBox(height: 16),
                   Obx(
@@ -52,9 +51,7 @@ class LoginScreen extends GetView<AuthController> {
                       controller: controller.loginPasswordController,
                       labelText: 'كلمة المرور',
                       obscureText: controller.isPasswordHidden.value,
-                      validator: (value) => (value == null || value.length < 6)
-                          ? 'كلمة المرور يجب أن تكون 6 أحرف على الأقل'
-                          : null,
+                      validator: Validators.validatePassword,
                       suffixIcon: IconButton(
                         icon: Icon(
                           controller.isPasswordHidden.value

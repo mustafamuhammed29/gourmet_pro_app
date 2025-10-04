@@ -1,7 +1,16 @@
+import 'app_config.dart';
+
 // هذا الملف يحتوي على كل الثوابت المتعلقة بالـ API
 class ApiConstants {
-  // هام: قم بتغيير هذا الرابط إلى عنوان IP الخاص بجهازك
-  // لكي يتمكن محاكي الأندرويد أو جهازك الحقيقي من الوصول للخادم المحلي
-  // مثال: 'http://192.168.1.10:3000'
-  static const String baseUrl = 'http://localhost:3000';
+  // استخدام التكوين المركزي مع إمكانية التخصيص
+  // يمكن تغيير الرابط عبر متغيرات البيئة أو التكوين
+  static const String baseUrl = AppConfig.baseUrl;
+
+  // API Endpoints
+  static const String authLogin = '/auth/login';
+  static const String authRegister = '/auth/register';
+  static const String products = '/products';
+  static const String restaurants = '/restaurants';
+  static const String chat = '/chat';
+  static const String ai = '/ai';
 }

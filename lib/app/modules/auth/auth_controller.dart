@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -122,22 +121,19 @@ class AuthController extends GetxController {
           'address': addressController.text.trim(),
         };
 
-        // --- تم التعديل هنا ---
         final response = await _apiProvider.registerAndUpload(
           data: data,
           licenseFile: licenseFile.value!,
           registryFile: commercialRegistryFile.value!,
         );
 
-        // --- وتم التعديل هنا ---
-        if (response.statusCode == 201) {
+        if (response.isOk && response.statusCode == 201) {
           CustomSnackbar.showSuccess(
               'تم التسجيل بنجاح! طلبك الآن قيد المراجعة.');
           Get.toNamed(Routes.pendingApproval);
         } else {
-          final decodedBody = jsonDecode(response.body);
           CustomSnackbar.showError(
-              decodedBody['message'] ?? 'فشل التسجيل. حاول مرة أخرى.');
+              response.body?['message'] ?? 'فشل التسجيل. حاول مرة أخرى.');
         }
       } catch (e) {
         CustomSnackbar.showError('حدث خطأ غير متوقع: ${e.toString()}');
@@ -175,16 +171,41 @@ class AuthController extends GetxController {
   }
 
   void _disposeControllers() {
-    loginEmailController.dispose();
-    loginPasswordController.dispose();
-    fullNameController.dispose();
-    restaurantNameController.dispose();
-    addressController.dispose();
-    cuisineTypeController.dispose();
-    registerEmailController.dispose();
-    phoneNumberController.dispose();
-    registerPasswordController.dispose();
-    confirmPasswordController.dispose();
+    try {
+      if (loginEmailController.hasListeners) {
+        loginEmailController.dispose();
+      }
+      if (loginPasswordController.hasListeners) {
+        loginPasswordController.dispose();
+      }
+      if (fullNameController.hasListeners) {
+        fullNameController.dispose();
+      }
+      if (restaurantNameController.hasListeners) {
+        restaurantNameController.dispose();
+      }
+      if (addressController.hasListeners) {
+        addressController.dispose();
+      }
+      if (cuisineTypeController.hasListeners) {
+        cuisineTypeController.dispose();
+      }
+      if (registerEmailController.hasListeners) {
+        registerEmailController.dispose();
+      }
+      if (phoneNumberController.hasListeners) {
+        phoneNumberController.dispose();
+      }
+      if (registerPasswordController.hasListeners) {
+        registerPasswordController.dispose();
+      }
+      if (confirmPasswordController.hasListeners) {
+        confirmPasswordController.dispose();
+      }
+    } catch (e) {
+      // تجاهل أخطاء dispose إذا كانت controllers محذوفة بالفعل
+      print('Error disposing controllers: $e');
+    }
   }
 }
 
