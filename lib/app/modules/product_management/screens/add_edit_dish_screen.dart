@@ -130,9 +130,9 @@ class AddEditDishScreen extends GetView<ProductManagementController> {
   Widget _buildImageUploader() {
     return Obx(() {
       final pickedImage = controller.pickedImage.value;
-      final existingImageUrl = controller.isEditMode.value
-          ? (Get.arguments as dynamic).imageUrl
-          : null;
+      final existingProduct =
+      controller.isEditMode.value ? (Get.arguments as dynamic) : null;
+      final existingImageUrl = existingProduct?.imageUrl;
 
       Widget imageWidget;
 
@@ -142,7 +142,8 @@ class AddEditDishScreen extends GetView<ProductManagementController> {
       } else if (existingImageUrl != null) {
         // إذا كان في وضع التعديل وهناك صورة موجودة
         imageWidget = Image.network(
-          '${ApiConstants.baseUrl}/$existingImageUrl', // بناء المسار الكامل للصورة
+          // 💡 استخدام uploadsBaseUrl
+          '${ApiConstants.uploadsBaseUrl}/$existingImageUrl',
           fit: BoxFit.cover,
           errorBuilder: (context, error, stackTrace) => _buildPlaceholder(),
         );

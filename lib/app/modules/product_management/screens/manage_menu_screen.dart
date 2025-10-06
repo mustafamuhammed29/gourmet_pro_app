@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:gourmet_pro_app/app/data/models/product_model.dart';
 import 'package:gourmet_pro_app/app/modules/product_management/product_management_controller.dart';
+import 'package:gourmet_pro_app/app/shared/constants/api_constants.dart'; // 💡 استيراد الثوابت
 import 'package:gourmet_pro_app/app/shared/theme/app_colors.dart';
 
 class ManageMenuScreen extends GetView<ProductManagementController> {
@@ -79,6 +80,11 @@ class _DishCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 💡 بناء المسار الكامل للصورة
+    final imageUrl = product.imageUrl != null
+        ? '${ApiConstants.uploadsBaseUrl}/${product.imageUrl}'
+        : 'https://placehold.co/100x100/333/FFF?text=Dish';
+
     return Container(
       padding: const EdgeInsets.all(12.0),
       decoration: BoxDecoration(
@@ -91,8 +97,7 @@ class _DishCard extends StatelessWidget {
           ClipRRect(
             borderRadius: BorderRadius.circular(8.0),
             child: Image.network(
-              product.imageUrl ??
-                  'https://placehold.co/100x100/333/FFF?text=Dish',
+              imageUrl,
               width: 80,
               height: 80,
               fit: BoxFit.cover,
@@ -190,4 +195,3 @@ class _DishCard extends StatelessWidget {
     );
   }
 }
-
