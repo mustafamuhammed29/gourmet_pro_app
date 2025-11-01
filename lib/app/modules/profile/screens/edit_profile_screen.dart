@@ -72,33 +72,18 @@ class EditProfileScreen extends GetView<ProfileController> {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          CircleAvatar(
+          Obx(() => CircleAvatar(
             radius: 50,
             backgroundColor: AppColors.bgSecondary,
             child: ClipOval(
-              child: Image.network(
-                controller.logoUrl.value,
-                fit: BoxFit.cover,
-                width: 100,
-                height: 100,
-                errorBuilder: (context, error, stackTrace) {
-                  return const Icon(
-                    Icons.storefront,
-                    color: AppColors.textSecondary,
-                    size: 50,
-                  );
-                },
-              ),
+              child: _buildLogoImage(),
             ),
-          ),
+          )),
           Positioned(
             bottom: -5,
             right: -5,
             child: GestureDetector(
-              onTap: () {
-                // TODO: Add logic to pick image from gallery/camera
-                CustomSnackbar.showInfo('سيتم تفعيل ميزة تغيير الصورة قريباً.');
-              },
+              onTap: () => controller.pickLogoImage(), // ✨ استدعاء دالة اختيار الصورة,
               child: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: const BoxDecoration(
@@ -116,6 +101,34 @@ class EditProfileScreen extends GetView<ProfileController> {
         ],
       ),
     );
+  }
+
+  // ✨ دالة لعرض الصورة (محلية أو من الشبكة)
+  Widget _buildLogoImage() {
+    if (controller.pickedLogo.value != null) {
+      // عرض الصورة المحلية
+      return Image.file(
+        controller.pickedLogo.value!,
+        fit: BoxFit.cover,
+        width: 100,
+        height: 100,
+      );
+    } else {
+      // عرض الصورة من الشبكة
+      return Image.network(
+        controller.logoUrl.value,
+        fit: BoxFit.cover,
+        width: 100,
+        height: 100,
+        errorBuilder: (context, error, stackTrace) {
+          return const Icon(
+            Icons.storefront,
+            color: AppColors.textSecondary,
+            size: 50,
+          );
+        },
+      );
+    }
   }
 
   Widget _buildTextField({

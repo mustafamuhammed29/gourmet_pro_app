@@ -111,6 +111,16 @@ class ApiProvider extends GetConnect {
   Future<Response> updateMyRestaurant(Map<String, dynamic> data) =>
       patch('/restaurants/my-restaurant', data);
 
+  // ✨ تحديث بيانات المطعم مع الشعار
+  Future<Response> updateMyRestaurantWithLogo(Map<String, dynamic> data, {File? logo}) {
+    final form = FormData(data);
+    if (logo != null) {
+      form.files.add(MapEntry(
+          'logo', MultipartFile(logo, filename: logo.path.split('/').last)));
+    }
+    return patch('/restaurants/my-restaurant', form);
+  }
+
   // --- Notifications Functions ---
   Future<Response> getMyNotifications() => get('/notifications/my-notifications');
   

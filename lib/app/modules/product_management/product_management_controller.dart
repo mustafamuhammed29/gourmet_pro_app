@@ -94,7 +94,7 @@ class ProductManagementController extends GetxController {
       final dishData = {
         'name': nameArController.text,
         'description': descriptionArController.text,
-        'price': priceController.text, // الإرسال كنص أفضل
+        'price': double.tryParse(priceController.text) ?? 0.0, // ✨ تحويل النص إلى رقم
         'category': categoryController.text,
       };
 
