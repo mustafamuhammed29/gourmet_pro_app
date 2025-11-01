@@ -133,7 +133,8 @@ class ProfileController extends GetxController {
   }
 
   void updateLocationOnMap() {
-    CustomSnackbar.showInfo('سيتم تفعيل هذه الميزة قريباً لتحديد موقعك.');
+    // فتح صفحة الإعدادات لتحديث الموقع
+    Get.toNamed('/settings');
   }
 
   void manageSubscription() {

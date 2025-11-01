@@ -1,48 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:gourmet_pro_app/app/modules/other_screens/notifications_controller.dart';
 import 'package:gourmet_pro_app/app/shared/theme/app_colors.dart';
-
-// A simple local model for notification data.
-class NotificationItem {
-  final String title;
-  final String timeAgo;
-  final bool isNew;
-
-  // The constructor is now marked as const.
-  const NotificationItem({
-    required this.title,
-    required this.timeAgo,
-    this.isNew = false,
-  });
-}
 
 class NotificationsScreen extends StatelessWidget {
   const NotificationsScreen({super.key});
 
-  // Dummy data for demonstration purposes.
-  // We can now use 'const' inside the list because the NotificationItem constructor is const.
-  final List<NotificationItem> _notifications = const [
-    NotificationItem(
-      title: 'نصيحة جديدة: قم بتحديث صور أطباقك!',
-      timeAgo: 'منذ 6 ساعات',
-      isNew: true,
-    ),
-    NotificationItem(
-      title: 'تمت الموافقة على طلبك لخدمة "استشارات الطهي".',
-      timeAgo: 'منذ يوم واحد',
-    ),
-    NotificationItem(
-      title: 'لديك تقييم جديد بـ 5 نجوم من أحد الزبائن.',
-      timeAgo: 'منذ 3 أيام',
-    ),
-    NotificationItem(
-      title: 'تذكير: عرض "خصم الصيف" سينتهي قريباً.',
-      timeAgo: 'منذ أسبوع واحد',
-    ),
-  ];
-
   @override
   Widget build(BuildContext context) {
+    // إنشاء Controller
+    final controller = Get.put(NotificationsController());
+
     return Scaffold(
       backgroundColor: AppColors.bgPrimary,
       appBar: AppBar(
@@ -62,60 +30,100 @@ class NotificationsScreen extends StatelessWidget {
           onPressed: () => Get.back(),
         ),
       ),
-      body: ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-        itemCount: _notifications.length,
-        itemBuilder: (context, index) {
-          final notification = _notifications[index];
-          return _NotificationCard(notification: notification);
-        },
-      ),
+      body: Obx(() {
+        if (controller.isLoading.value) {
+          return const Center(
+            child: CircularProgressIndicator(color: AppColors.accent),
+          );
+        }
+
+        if (controller.notifications.isEmpty) {
+          return const Center(
+            child: Text(
+              'لا توجد إشعارات',
+              style: TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 16,
+              ),
+            ),
+          );
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+          itemCount: controller.notifications.length,
+          itemBuilder: (context, index) {
+            final notification = controller.notifications[index];
+            return _NotificationCard(
+              notification: notification,
+              onTap: () => controller.markAsRead(notification.id),
+            );
+          },
+        );
+      }),
     );
   }
 }
 
 // A dedicated widget for a single notification item for cleaner code.
 class _NotificationCard extends StatelessWidget {
-  const _NotificationCard({required this.notification});
+  const _NotificationCard({
+    required this.notification,
+    required this.onTap,
+  });
 
   final NotificationItem notification;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.bgSecondary,
-        borderRadius: BorderRadius.circular(12),
-        border: notification.isNew
-            ? const Border(
-          right: BorderSide(color: AppColors.accent, width: 3),
-        )
-            : null,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            notification.title,
-            style: const TextStyle(
-              color: AppColors.textPrimary,
-              fontWeight: FontWeight.w600,
-              fontSize: 15,
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.bgSecondary,
+          borderRadius: BorderRadius.circular(12),
+          border: !notification.isRead
+              ? const Border(
+                  right: BorderSide(color: AppColors.accent, width: 3),
+                )
+              : null,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              notification.title,
+              style: TextStyle(
+                color: AppColors.textPrimary,
+                fontWeight:
+                    notification.isRead ? FontWeight.normal : FontWeight.w600,
+                fontSize: 15,
+              ),
             ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            notification.timeAgo,
-            style: const TextStyle(
-              color: AppColors.textSecondary,
-              fontSize: 12,
+            if (notification.message.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Text(
+                notification.message,
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+            const SizedBox(height: 6),
+            Text(
+              notification.timeAgo,
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 12,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 }
-

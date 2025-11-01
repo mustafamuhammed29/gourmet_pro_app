@@ -26,9 +26,7 @@ class ProductManagementController extends GetxController {
   late TextEditingController categoryController;
 
   final isSaving = false.obs;
-  final isTranslatingName = false.obs;
-  final isTranslatingDescription = false.obs;
-  final isEnhancingDescription = false.obs;
+
 
   final Rx<File?> pickedImage = Rx<File?>(null);
 
@@ -143,28 +141,7 @@ class ProductManagementController extends GetxController {
     }
   }
 
-  Future<void> translateName() async {
-    isTranslatingName.value = true;
-    await Future.delayed(const Duration(seconds: 1));
-    nameEnController.text = "Grilled Salmon (Translated)";
-    isTranslatingName.value = false;
-  }
 
-  Future<void> translateDescription() async {
-    isTranslatingDescription.value = true;
-    await Future.delayed(const Duration(seconds: 1));
-    descriptionEnController.text =
-    "A short and appealing description... (Translated)";
-    isTranslatingDescription.value = false;
-  }
-
-  Future<void> enhanceDescription() async {
-    isEnhancingDescription.value = true;
-    await Future.delayed(const Duration(seconds: 2));
-    descriptionArController.text =
-    "${descriptionArController.text} (وصف محسن ومميز لجذب الزبائن).";
-    isEnhancingDescription.value = false;
-  }
 
   void _initializeControllers() {
     nameArController = TextEditingController();

@@ -111,22 +111,11 @@ class ApiProvider extends GetConnect {
   Future<Response> updateMyRestaurant(Map<String, dynamic> data) =>
       patch('/restaurants/my-restaurant', data);
 
-  // --- ✨ AI Functions (Added) ---
-  Future<Response> translateText(String text) =>
-      post('/ai/translate', {'text': text});
-
-  Future<Response> enhanceDescription(String description) =>
-      post('/ai/enhance-description', {'description': description});
-
-  Future<Response> generateReviewResponse(String review) =>
-      post('/ai/generate-review-response', {'review': review});
-
-  Future<Response> generateSocialPost(
-      String dishName, String dishDescription) =>
-      post('/ai/generate-social-post', {
-        'dishName': dishName,
-        'dishDescription': dishDescription,
-      });
+  // --- Notifications Functions ---
+  Future<Response> getMyNotifications() => get('/notifications/my-notifications');
+  
+  Future<Response> markNotificationAsRead(String id) => 
+      patch('/notifications/$id/read', {});
 
   // ✨ دالة مساعدة لحفظ الـ Token
   void saveToken(String token) {
