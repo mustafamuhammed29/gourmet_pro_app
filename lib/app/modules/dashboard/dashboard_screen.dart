@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:gourmet_pro_app/app/modules/ai_features/promo_generator/promo_generator_widget.dart';
 import 'package:gourmet_pro_app/app/modules/dashboard/dashboard_controller.dart';
 import '../../routes/app_routes.dart';
 import '../../shared/theme/app_colors.dart';
@@ -65,7 +64,6 @@ class DashboardScreen extends GetView<DashboardController> {
             const SizedBox(height: 16),
             _buildQuickActions(),
             const SizedBox(height: 24),
-            const PromoGeneratorWidget(),
             const SizedBox(height: 24),
             Text('آخر الإشعارات', style: Get.textTheme.titleLarge),
             const SizedBox(height: 16),
@@ -89,18 +87,18 @@ class DashboardScreen extends GetView<DashboardController> {
                 fit: BoxFit.cover,
                 colorFilter: ColorFilter.mode(
                     Colors.black.withOpacity(0.4), BlendMode.darken))),
-        child: const Align(
+        child: Align(
           alignment: Alignment.bottomRight,
           child: Padding(
-            padding: EdgeInsets.all(16.0),
-            child: Text(
-              'مرحباً بعودتك!',
-              style: TextStyle(
+            padding: const EdgeInsets.all(16.0),
+            child: Obx(() => Text(
+              'مرحباً بعودتك في ${controller.restaurantName.value}!',
+              style: const TextStyle(
                 color: Colors.white,
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
               ),
-            ),
+            )),
           ),
         ),
       ),

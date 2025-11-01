@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 // ignore: depend_on_referenced_packages
 import 'package:get/get.dart';
+import 'package:gourmet_pro_app/app/data/providers/api_provider.dart';
 import 'package:gourmet_pro_app/app/shared/widgets/custom_snackbar.dart';
 
 import '../main_wrapper/main_menu_screen.dart';
 
 class DashboardController extends GetxController {
+  final ApiProvider _apiProvider = Get.find<ApiProvider>();
+  
   // --- STATE VARIABLES ---
   final restaurantName = 'مطعم الذواقة'.obs;
 
@@ -13,6 +16,24 @@ class DashboardController extends GetxController {
   // The TextEditingController has been removed from here and is now managed by the widget itself.
   final isPromoLoading = false.obs;
   final promoIdeaResult = ''.obs;
+
+  @override
+  void onInit() {
+    super.onInit();
+    fetchRestaurantName();
+  }
+
+  Future<void> fetchRestaurantName() async {
+    try {
+      final response = await _apiProvider.getMyRestaurant();
+      if (response.isOk) {
+        final data = response.body;
+        restaurantName.value = data['name'] ?? 'مطعم الذواقة';
+      }
+    } catch (e) {
+      print('Error fetching restaurant name: $e');
+    }
+  }
 
   // --- PUBLIC METHODS ---
 

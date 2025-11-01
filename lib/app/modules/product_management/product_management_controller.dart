@@ -76,6 +76,10 @@ class ProductManagementController extends GetxController {
     Get.toNamed(Routes.addEditDish, arguments: product);
   }
 
+  void goToSocialPostGenerator(ProductModel product) {
+    Get.toNamed(Routes.socialPostGenerator, arguments: product);
+  }
+
   void checkEditingMode() {
     if (Get.arguments != null && Get.arguments is ProductModel) {
       isEditMode.value = true;
@@ -94,7 +98,7 @@ class ProductManagementController extends GetxController {
       final dishData = {
         'name': nameArController.text,
         'description': descriptionArController.text,
-        'price': double.tryParse(priceController.text) ?? 0.0, // ✨ تحويل النص إلى رقم
+        'price': double.tryParse(priceController.text) ?? 0.0, // ✨ تحويل إلى رقم
         'category': categoryController.text,
       };
 

@@ -1,11 +1,10 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:gourmet_pro_app/app/data/providers/api_provider.dart';
 import 'package:gourmet_pro_app/app/routes/app_routes.dart';
-import 'package:image_picker/image_picker.dart'; // ✨ استيراد مكتبة اختيار الصور
+import 'package:image_picker/image_picker.dart';
 import '../../shared/theme/app_colors.dart';
 import '../../shared/widgets/custom_snackbar.dart';
 
@@ -18,8 +17,9 @@ class DocumentStatus {
 
 class ProfileController extends GetxController {
   final _storage = GetStorage();
-  final ApiProvider _apiProvider = Get.find<ApiProvider>(); // ✨ حقن الـ API Provider
-  final ImagePicker _picker = ImagePicker(); // ✨ مكتبة اختيار الصور
+  final ApiProvider _apiProvider = Get.find<ApiProvider>();
+  final ImagePicker _picker = ImagePicker();
+  final Rx<File?> pickedLogo = Rx<File?>(null);
 
   // --- Main Profile Info ---
   final restaurantName = ''.obs; // ✨ سيتم جلبه من الـ API
@@ -45,7 +45,6 @@ class ProfileController extends GetxController {
   late TextEditingController storyController;
   final isSaving = false.obs;
   final isLoadingProfile = true.obs; // ✨ متغير جديد لحالة التحميل
-  final Rx<File?> pickedLogo = Rx<File?>(null); // ✨ الصورة المختارة
 
   @override
   void onInit() {
@@ -67,17 +66,10 @@ class ProfileController extends GetxController {
 
         // تحديث البيانات المرصودة (observables)
         restaurantName.value = data['name'] ?? '';
-        // ✨ جلب البريد الإلكتروني من بيانات المالك
-        if (data['owner'] != null) {
-          email.value = data['owner']['email'] ?? '';
-        }
+        // البريد الإلكتروني للمالك سيكون في مكان آخر (ربما AuthController)
+        // email.value = data['owner']['email'] ?? '';
         bio.value = data['bio'] ?? 'نبذة تعريفية قصيرة عن المطعم';
         story.value = data['story'] ?? 'قصتنا...';
-        
-        // ✨ جلب رابط الشعار إذا كان موجوداً
-        if (data['logoUrl'] != null && data['logoUrl'].isNotEmpty) {
-          logoUrl.value = data['logoUrl'];
-        }
 
         // تحديث متحكمات النصوص للنموذج
         restaurantNameController.text = restaurantName.value;
@@ -144,27 +136,6 @@ class ProfileController extends GetxController {
     }
   }
 
-  /// ✨ دالة اختيار الصورة من المعرض
-  Future<void> pickLogoImage() async {
-    try {
-      final XFile? image = await _picker.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 500,
-        maxHeight: 500,
-        imageQuality: 85,
-      );
-      
-      if (image != null) {
-        pickedLogo.value = File(image.path);
-        // تحديث الصورة المعروضة مؤقتاً
-        logoUrl.value = image.path;
-        CustomSnackbar.showSuccess('تم اختيار الصورة! اضغط "حفظ التغييرات" لرفعها.');
-      }
-    } catch (e) {
-      CustomSnackbar.showError('فشل في اختيار الصورة: ${e.toString()}');
-    }
-  }
-
   void updateLocationOnMap() {
     // فتح صفحة الإعدادات لتحديث الموقع
     Get.toNamed('/settings');
@@ -172,6 +143,18 @@ class ProfileController extends GetxController {
 
   void manageSubscription() {
     CustomSnackbar.showInfo('سيتم تفعيل هذه الميزة قريباً لإدارة اشتراكك.');
+  }
+
+  Future<void> pickLogoImage() async {
+    try {
+      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+      if (image != null) {
+        pickedLogo.value = File(image.path);
+        CustomSnackbar.showSuccess('تم اختيار الصورة بنجاح');
+      }
+    } catch (e) {
+      CustomSnackbar.showError('فشل في اختيار الصورة');
+    }
   }
 
   void logout() {
@@ -202,14 +185,12 @@ class ProfileController extends GetxController {
         'story': storyController.text,
       };
 
-      // ✨ استدعاء الـ API لتحديث البيانات مع الصورة
-      final response = await _apiProvider.updateMyRestaurantWithLogo(
-        dataToUpdate,
-        logo: pickedLogo.value,
-      );
+      // ✨ رفع الصورة إذا تم اختيارها
+      final response = pickedLogo.value != null
+          ? await _apiProvider.updateMyRestaurantWithLogo(dataToUpdate, pickedLogo.value!)
+          : await _apiProvider.updateMyRestaurant(dataToUpdate);
 
       if (response.isOk) {
-        pickedLogo.value = null; // مسح الصورة المختارة
         await fetchProfileData(); // إعادة جلب البيانات لتحديث الواجهة
         Get.back();
         CustomSnackbar.showSuccess('تم حفظ التغييرات بنجاح!');
@@ -217,7 +198,7 @@ class ProfileController extends GetxController {
         throw Exception('Failed to save changes');
       }
     } catch (e) {
-      CustomSnackbar.showError('حدث خطأ أثناء حفظ التغييرات: ${e.toString()}');
+      CustomSnackbar.showError('حدث خطأ أثناء حفظ التغييرات.');
     } finally {
       isSaving.value = false;
     }
@@ -231,3 +212,4 @@ class ProfileController extends GetxController {
     super.onClose();
   }
 }
+
