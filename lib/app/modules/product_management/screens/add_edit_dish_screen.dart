@@ -48,11 +48,7 @@ class AddEditDishScreen extends GetView<ProductManagementController> {
               controller: controller.nameArController,
               hint: 'مثال: سلمون مشوي',
             ),
-            _buildAiButton(
-              label: '✨ ترجمة إلى EN',
-              isLoading: controller.isTranslatingName,
-              onPressed: controller.translateName,
-            ),
+
             _buildTextField(
               label: 'Dish Name (EN)',
               controller: controller.nameEnController,
@@ -67,22 +63,7 @@ class AddEditDishScreen extends GetView<ProductManagementController> {
               hint: 'وصف قصير وجذاب للطبق...',
               maxLines: 3,
             ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _buildAiButton(
-                  label: '✨ ترجمة إلى EN',
-                  isLoading: controller.isTranslatingDescription,
-                  onPressed: controller.translateDescription,
-                ),
-                _buildAiButton(
-                  label: '✨ تحسين الوصف',
-                  isLoading: controller.isEnhancingDescription,
-                  onPressed: controller.enhanceDescription,
-                  isPrimary: false,
-                ),
-              ],
-            ),
+
             _buildTextField(
               label: 'Description (EN)',
               controller: controller.descriptionEnController,
@@ -246,53 +227,5 @@ class AddEditDishScreen extends GetView<ProductManagementController> {
     );
   }
 
-  Widget _buildAiButton({
-    required String label,
-    required RxBool isLoading,
-    required VoidCallback onPressed,
-    bool isPrimary = true,
-  }) {
-    final buttonColor =
-    isPrimary ? const Color(0xFF008080) : const Color(0xFF4F46E5);
-    final hoverColor =
-    isPrimary ? const Color(0xFF006666) : const Color(0xFF4338CA);
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12.0),
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: Obx(
-              () => TextButton(
-            onPressed: isLoading.value ? null : onPressed,
-            style: TextButton.styleFrom(
-              backgroundColor: buttonColor,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ).copyWith(
-              overlayColor: MaterialStateProperty.all(hoverColor),
-            ),
-            child: isLoading.value
-                ? const SizedBox(
-              width: 16,
-              height: 16,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: Colors.white,
-              ),
-            )
-                : Text(
-              label,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 }
