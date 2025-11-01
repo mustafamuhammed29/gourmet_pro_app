@@ -76,10 +76,6 @@ class ProductManagementController extends GetxController {
     Get.toNamed(Routes.addEditDish, arguments: product);
   }
 
-  void goToSocialPostGenerator(ProductModel product) {
-    Get.toNamed(Routes.socialPostGenerator, arguments: product);
-  }
-
   void checkEditingMode() {
     if (Get.arguments != null && Get.arguments is ProductModel) {
       isEditMode.value = true;
