@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:gourmet_pro_app/app/data/providers/api_provider.dart';
 import 'package:gourmet_pro_app/app/shared/widgets/custom_snackbar.dart';
 
 class ServicesController extends GetxController {
-  // In a real app, you might fetch services from an API.
-  // For now, we'll use a static list.
+  final ApiProvider _apiProvider = Get.find<ApiProvider>();
+  
+  // قائمة الخدمات المتاحة
   final services = [
     {
       'title': 'استشارات الطهي',
@@ -23,11 +25,28 @@ class ServicesController extends GetxController {
     },
   ];
 
-  /// Handles the service request action.
-  void requestService(String serviceName) {
-    // In a real app, this might navigate to a detailed request form.
-    // For now, we show a success confirmation.
-    CustomSnackbar.showSuccess(
-        'تم استلام طلبك لخدمة "$serviceName" وسنتواصل معك قريباً.');
+  final isLoading = false.obs;
+
+  /// ✨ تم تحديث الدالة لإرسال طلب حقيقي إلى الخادم
+  Future<void> requestService(String serviceName) async {
+    try {
+      isLoading.value = true;
+      
+      final response = await _apiProvider.requestService({
+        'serviceName': serviceName,
+        'description': 'طلب خدمة $serviceName',
+      });
+
+      if (response.isOk) {
+        CustomSnackbar.showSuccess(
+            'تم استلام طلبك لخدمة "$serviceName" وسنتواصل معك قريباً.');
+      } else {
+        throw Exception('Failed to request service');
+      }
+    } catch (e) {
+      CustomSnackbar.showError('حدث خطأ أثناء إرسال الطلب. حاول مرة أخرى.');
+    } finally {
+      isLoading.value = false;
+    }
   }
 }

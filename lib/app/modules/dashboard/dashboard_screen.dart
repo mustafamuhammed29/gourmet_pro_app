@@ -114,7 +114,7 @@ class DashboardScreen extends GetView<DashboardController> {
       physics: const NeverScrollableScrollPhysics(),
       crossAxisSpacing: 16,
       mainAxisSpacing: 16,
-      childAspectRatio: 1.5,
+      childAspectRatio: 1.3,
       children: [
         _QuickActionButton(
           icon: Icons.menu_book,
@@ -136,6 +136,16 @@ class DashboardScreen extends GetView<DashboardController> {
           icon: Icons.edit_note,
           label: 'تعديل الملف',
           onTap: () => Get.toNamed(Routes.editProfile),
+        ),
+        _QuickActionButton(
+          icon: Icons.shopping_bag_outlined,
+          label: 'طلباتي',
+          onTap: () => Get.toNamed(Routes.orders),
+        ),
+        _QuickActionButton(
+          icon: Icons.restaurant,
+          label: 'ركن الشيف',
+          onTap: () => Get.toNamed(Routes.chefCorner),
         ),
       ],
     );

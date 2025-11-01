@@ -29,4 +29,5 @@ abstract class Routes {
   // Other Screens
   static const notifications = '/notifications';
   static const staffManagement = '/staff-management';
+  static const orders = '/orders';
 }

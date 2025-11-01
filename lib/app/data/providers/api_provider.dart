@@ -138,4 +138,34 @@ class ApiProvider extends GetConnect {
     _storage.remove('token');
     Get.offAllNamed(Routes.login);
   }
+
+  // --- Services Functions ---
+  Future<Response> requestService(Map<String, dynamic> data) =>
+      post('/services/request', data);
+
+  Future<Response> getMyServiceRequests() => get('/services/my-requests');
+
+  // --- Orders Functions ---
+  Future<Response> createOrder(Map<String, dynamic> data) =>
+      post('/orders', data);
+
+  Future<Response> getMyOrders() => get('/orders/my-orders');
+
+  Future<Response> updateOrderStatus(String orderId, String status) =>
+      patch('/orders/$orderId/status', {'status': status});
+
+  // --- Chef Requests Functions ---
+  Future<Response> createChefRequest(Map<String, dynamic> data) =>
+      post('/chef-requests', data);
+
+  Future<Response> getMyChefRequests() => get('/chef-requests/my-requests');
+
+  Future<Response> updateChefRequestStatus(String requestId, String status) =>
+      patch('/chef-requests/$requestId/status', {'status': status});
+
+  // --- Documents Functions ---
+  Future<Response> getMyDocuments() => get('/documents/my-documents');
+
+  // --- Restaurants Functions (Additional) ---
+  Future<Response> getAllRestaurants() => get('/restaurants');
 }

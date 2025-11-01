@@ -72,11 +72,8 @@ class ProfileController extends GetxController {
         bioController.text = bio.value;
         storyController.text = story.value;
 
-        // يمكنك أيضاً جلب حالة المستندات هنا إذا كانت متوفرة في الـ API
-        documents.assignAll([
-          DocumentStatus('الرخصة التجارية', 'approved'),
-          DocumentStatus('السجل التجاري', 'pending'),
-        ]);
+        // ✨ جلب حالة المستندات من الخادم
+        await fetchDocumentsStatus();
 
         calculateProfileCompletion();
       } else {
@@ -98,6 +95,41 @@ class ProfileController extends GetxController {
     if (story.value.isNotEmpty) completion += 0.25;
 
     profileCompletion.value = completion;
+  }
+
+  /// ✨ دالة جديدة لجلب حالة المستندات
+  Future<void> fetchDocumentsStatus() async {
+    try {
+      final response = await _apiProvider.getMyDocuments();
+
+      if (response.isOk && response.body is List) {
+        final List<dynamic> docsJson = response.body;
+        final docsList = docsJson
+            .map((doc) => DocumentStatus(
+                  _getDocumentName(doc['type']),
+                  doc['status'],
+                ))
+            .toList();
+        documents.assignAll(docsList);
+      }
+    } catch (e) {
+      // في حالة الفشل، نعرض بيانات افتراضية
+      documents.assignAll([
+        DocumentStatus('الرخصة التجارية', 'pending'),
+        DocumentStatus('السجل التجاري', 'pending'),
+      ]);
+    }
+  }
+
+  String _getDocumentName(String type) {
+    switch (type) {
+      case 'license':
+        return 'الرخصة التجارية';
+      case 'commercial_registry':
+        return 'السجل التجاري';
+      default:
+        return type;
+    }
   }
 
   void updateLocationOnMap() {

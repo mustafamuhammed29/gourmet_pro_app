@@ -29,6 +29,8 @@ import 'package:gourmet_pro_app/app/modules/services/services_binding.dart';
 import 'package:gourmet_pro_app/app/modules/services/services_screen.dart';
 import 'package:gourmet_pro_app/app/modules/splash/splash_binding.dart';
 import 'package:gourmet_pro_app/app/modules/splash/splash_screen.dart';
+import 'package:gourmet_pro_app/app/modules/orders/orders_binding.dart';
+import 'package:gourmet_pro_app/app/modules/orders/orders_screen.dart';
 
 import '../modules/promo_tools/digital_menu_screen.dart';
 import '../modules/promo_tools/promo_tools_screen.dart';
@@ -58,6 +60,7 @@ class AppPages {
     GetPage(name: Routes.staffManagement, page: () => const StaffManagementScreen()),
     GetPage(name: Routes.services, page: () => const ServicesScreen(), binding: ServicesBinding()),
     GetPage(name: Routes.chat, page: () => const ChatScreen(), binding: ChatBinding()),
+    GetPage(name: Routes.orders, page: () => const OrdersScreen(), binding: OrdersBinding()),
   ];
 }
 
