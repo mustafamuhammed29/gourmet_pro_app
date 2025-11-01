@@ -30,4 +30,5 @@ abstract class Routes {
   static const notifications = '/notifications';
   static const staffManagement = '/staff-management';
   static const orders = '/orders';
+  static const settings = '/settings';
 }

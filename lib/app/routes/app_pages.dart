@@ -1,8 +1,5 @@
 import 'package:get/get.dart';
-import 'package:gourmet_pro_app/app/modules/ai_features/review_responder/review_responder_binding.dart';
-import 'package:gourmet_pro_app/app/modules/ai_features/review_responder/review_responder_screen.dart';
-import 'package:gourmet_pro_app/app/modules/ai_features/social_post_generator/social_post_generator_binding.dart';
-import 'package:gourmet_pro_app/app/modules/ai_features/social_post_generator/social_post_generator_screen.dart';
+
 import 'package:gourmet_pro_app/app/modules/auth/auth_binding.dart';
 import 'package:gourmet_pro_app/app/modules/auth/screens/login_screen.dart';
 import 'package:gourmet_pro_app/app/modules/auth/screens/pending_approval_screen.dart';
@@ -31,6 +28,7 @@ import 'package:gourmet_pro_app/app/modules/splash/splash_binding.dart';
 import 'package:gourmet_pro_app/app/modules/splash/splash_screen.dart';
 import 'package:gourmet_pro_app/app/modules/orders/orders_binding.dart';
 import 'package:gourmet_pro_app/app/modules/orders/orders_screen.dart';
+import 'package:gourmet_pro_app/app/modules/settings/settings_screen.dart';
 
 import '../modules/promo_tools/digital_menu_screen.dart';
 import '../modules/promo_tools/promo_tools_screen.dart';
@@ -49,8 +47,7 @@ class AppPages {
     GetPage(name: Routes.digitalMenu, page: () => const DigitalMenuScreen(), binding: PromoToolsBinding()),
     GetPage(name: Routes.editProfile, page: () => const EditProfileScreen(), binding: ProfileBinding()),
     GetPage(name: Routes.profile, page: () => const ProfileScreen(), binding: ProfileBinding()),
-    GetPage(name: Routes.reviewResponder, page: () => const ReviewResponderScreen(), binding: ReviewResponderBinding()),
-    GetPage(name: Routes.socialPostGenerator, page: () => const SocialPostGeneratorScreen(), binding: SocialPostGeneratorBinding()),
+
     GetPage(name: Routes.manageMenu, page: () => const ManageMenuScreen(), binding: ProductManagementBinding()),
     GetPage(name: Routes.addEditDish, page: () => const AddEditDishScreen(), binding: ProductManagementBinding()),
     GetPage(name: Routes.chefCorner, page: () => const ChefCornerScreen(), binding: ChefCornerBinding()),
@@ -61,6 +58,7 @@ class AppPages {
     GetPage(name: Routes.services, page: () => const ServicesScreen(), binding: ServicesBinding()),
     GetPage(name: Routes.chat, page: () => const ChatScreen(), binding: ChatBinding()),
     GetPage(name: Routes.orders, page: () => const OrdersScreen(), binding: OrdersBinding()),
+    GetPage(name: Routes.settings, page: () => const SettingsScreen()),
   ];
 }
 
