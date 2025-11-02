@@ -190,3 +190,4 @@ class ApiProvider extends GetConnect {
         'code': code,
         'newPassword': newPassword,
       });
+}
