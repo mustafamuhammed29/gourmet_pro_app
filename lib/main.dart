@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:gourmet_pro_app/app/routes/app_pages.dart';
@@ -36,17 +35,6 @@ class GourmetProApp extends StatelessWidget {
       translations: AppTranslations(),
       locale: languageController.currentLocale.value,
       fallbackLocale: const Locale('ar'),
-      // Add Material and Cupertino localizations
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: const [
-        Locale('ar'),
-        Locale('en'),
-        Locale('de'),
-      ],
     );
   }
 }

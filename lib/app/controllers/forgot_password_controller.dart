@@ -103,7 +103,7 @@ class ForgotPasswordController extends GetxController {
         codeController.text.trim(),
       );
 
-      if (response.isOk && response.body['valid'] == true) {
+      if (response['valid'] == true) {
         currentStep.value = 3;
         Get.snackbar(
           'success'.tr,
