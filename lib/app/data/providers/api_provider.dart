@@ -166,3 +166,27 @@ class ApiProvider extends GetConnect {
   // --- Restaurants Functions (Additional) ---
   Future<Response> getAllRestaurants() => get('/restaurants');
 }
+
+  // --- Password Reset Functions ---
+  Future<Response> requestPasswordReset(String email) =>
+      post('/auth/password-reset/request', {'email': email});
+
+  Future<Map<String, dynamic>> verifyResetCode(String email, String code) async {
+    final response = await post('/auth/password-reset/verify', {
+      'email': email,
+      'code': code,
+    });
+    
+    if (response.isOk) {
+      return response.body;
+    } else {
+      throw Exception(response.bodyString ?? 'Failed to verify code');
+    }
+  }
+
+  Future<Response> resetPassword(String email, String code, String newPassword) =>
+      post('/auth/password-reset/reset', {
+        'email': email,
+        'code': code,
+        'newPassword': newPassword,
+      });
