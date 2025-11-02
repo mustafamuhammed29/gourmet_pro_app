@@ -4,6 +4,7 @@ import 'package:gourmet_pro_app/app/modules/auth/auth_binding.dart';
 import 'package:gourmet_pro_app/app/modules/auth/screens/login_screen.dart';
 import 'package:gourmet_pro_app/app/modules/auth/screens/pending_approval_screen.dart';
 import 'package:gourmet_pro_app/app/modules/auth/screens/register_screen.dart';
+import 'package:gourmet_pro_app/app/modules/auth/forgot_password_page.dart';
 import 'package:gourmet_pro_app/app/modules/chat/chat_binding.dart';
 import 'package:gourmet_pro_app/app/modules/chat/chat_screen.dart';
 import 'package:gourmet_pro_app/app/modules/chef_corner/chef_corner_binding.dart';
@@ -42,6 +43,7 @@ class AppPages {
     GetPage(name: Routes.login, page: () => const LoginScreen(), binding: AuthBinding()),
     GetPage(name: Routes.register, page: () => const RegisterScreen(), binding: AuthBinding()),
     GetPage(name: Routes.pendingApproval, page: () => const PendingApprovalScreen()),
+    GetPage(name: Routes.forgotPassword, page: () => const ForgotPasswordPage()),
     GetPage(name: Routes.mainWrapper, page: () => const MainWrapperScreen(), binding: MainWrapperBinding()),
     GetPage(name: Routes.promoTools, page: () => const PromoToolsScreen(), binding: PromoToolsBinding()),
     GetPage(name: Routes.digitalMenu, page: () => const DigitalMenuScreen(), binding: PromoToolsBinding()),

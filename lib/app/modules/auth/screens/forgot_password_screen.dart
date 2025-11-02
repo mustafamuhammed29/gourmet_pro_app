@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:gourmet_pro_app/app/modules/auth/controllers/forgot_password_controller.dart';
+import 'package:gourmet_pro_app/app/controllers/forgot_password_controller.dart';
 
 class ForgotPasswordScreen extends GetView<ForgotPasswordController> {
   const ForgotPasswordScreen({super.key});

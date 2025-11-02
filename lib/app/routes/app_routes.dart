@@ -4,6 +4,9 @@ abstract class Routes {
   static const login = '/login';
   static const register = '/register';
   static const pendingApproval = '/pending-approval';
+  static const forgotPassword = '/forgot-password';
+  static const verifyCode = '/verify-code';
+  static const resetPassword = '/reset-password';
   static const mainWrapper = '/main-wrapper';
 
   // --- Feature Routes ---
