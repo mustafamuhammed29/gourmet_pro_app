@@ -165,7 +165,6 @@ class ApiProvider extends GetConnect {
 
   // --- Restaurants Functions (Additional) ---
   Future<Response> getAllRestaurants() => get('/restaurants');
-}
 
   // --- Password Reset Functions ---
   Future<Response> requestPasswordReset(String email) =>

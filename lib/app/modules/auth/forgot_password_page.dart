@@ -13,7 +13,7 @@ class ForgotPasswordPage extends GetView<ForgotPasswordController> {
     return Scaffold(
       appBar: AppBar(
         title: Text('reset_password'.tr),
-        backgroundColor: AppColors.primary,
+        backgroundColor: AppColors.bgPrimary,
       ),
       body: Obx(() => SingleChildScrollView(
             padding: const EdgeInsets.all(24),

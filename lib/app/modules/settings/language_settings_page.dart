@@ -11,7 +11,7 @@ class LanguageSettingsPage extends GetView<LanguageController> {
     return Scaffold(
       appBar: AppBar(
         title: Text('change_language'.tr),
-        backgroundColor: AppColors.primary,
+        backgroundColor: AppColors.bgPrimary,
       ),
       body: Obx(() => ListView.builder(
             padding: const EdgeInsets.all(16),
